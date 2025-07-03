@@ -1,10 +1,13 @@
-
 import { useState, useEffect } from "react";
+import axios from "axios";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Mail, CheckCircle, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
+const API_URL=import.meta.env.VITE_API_URL
+console.log(API_URL)
 interface EmailVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -12,58 +15,70 @@ interface EmailVerificationModalProps {
   email: string;
 }
 
-const EmailVerificationModal = ({ isOpen, onClose, onContinueToLogin, email }: EmailVerificationModalProps) => {
+const EmailVerificationModal = ({
+  isOpen,
+  onClose,
+  onContinueToLogin,
+  email
+}: EmailVerificationModalProps) => {
   const [isVerified, setIsVerified] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [showResendButton, setShowResendButton] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Show resend button after 30 seconds
     const timer = setTimeout(() => {
       setShowResendButton(true);
     }, 30000);
-
     return () => clearTimeout(timer);
   }, []);
 
-  // Check for verification status (simulate checking)
   useEffect(() => {
-    const checkVerification = () => {
-      // TODO: Implement actual verification checking
-      // This would poll your backend to check if email is verified
-      console.log("Checking verification status...");
+    const checkVerification = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/auth/check-verification?email=${encodeURIComponent(email)}`);
+        if (res.data.isVerified) {
+          setIsVerified(true);
+          toast({
+            title: "Email verified!",
+            description: "You may now sign in."
+          });
+
+          // Automatically continue to login after success
+          setTimeout(() => {
+            onContinueToLogin();
+          }, 2000);
+        }
+      } catch (error) {
+        console.error("Failed to check email verification:", error);
+      }
     };
 
     if (isOpen && !isVerified) {
       const interval = setInterval(checkVerification, 5000);
       return () => clearInterval(interval);
     }
-  }, [isOpen, isVerified]);
+  }, [isOpen, isVerified, email, onContinueToLogin, toast]);
 
   const handleResendEmail = async () => {
     setIsResending(true);
-    // TODO: Implement resend verification email
-    console.log("Resending verification email to:", email);
-    
-    setTimeout(() => {
+    try {
+      await axios.post(`${API_URL}/auth/resend-verification`, { email });
+      toast({
+        title: "Verification email resent",
+        description: "Please check your inbox again."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to resend",
+        description: error?.response?.data?.error || "Could not resend verification email.",
+        variant: "destructive"
+      });
+    } finally {
       setIsResending(false);
       setShowResendButton(false);
-      // Reset timer for showing resend button again
       setTimeout(() => setShowResendButton(true), 30000);
-    }, 1000);
-  };
-
-  const handleVerificationSuccess = () => {
-    setIsVerified(true);
-    // Auto-close after showing success animation
-    setTimeout(() => {
-      onContinueToLogin();
-    }, 2000);
-  };
-
-  // Simulate receiving verification (for demo purposes)
-  const simulateVerification = () => {
-    handleVerificationSuccess();
+    }
   };
 
   return (
@@ -79,49 +94,43 @@ const EmailVerificationModal = ({ isOpen, onClose, onContinueToLogin, email }: E
           <div className="text-center">
             <div className="flex justify-center mb-4">
               {isVerified ? (
-                <div className="animate-scale-in">
-                  <CheckCircle className="h-16 w-16 text-emerald-500" />
-                </div>
+                <CheckCircle className="h-16 w-16 text-emerald-500 animate-scale-in" />
               ) : (
                 <Mail className="h-16 w-16 text-blue-500" />
               )}
             </div>
-            
+
             {isVerified ? (
-              <div className="space-y-2">
+              <>
                 <p className="text-lg font-medium text-gray-900">
                   Your email has been verified successfully!
                 </p>
-                <p className="text-gray-600">
-                  You can now sign in to your account.
-                </p>
-              </div>
+                <p className="text-gray-600">You can now sign in to your account.</p>
+              </>
             ) : (
-              <div className="space-y-2">
+              <>
                 <p className="text-lg font-medium text-gray-900">
                   We've sent a verification link to:
                 </p>
-                <p className="text-emerald-600 font-medium break-all">
-                  {email}
-                </p>
+                <p className="text-emerald-600 font-medium break-all">{email}</p>
                 <p className="text-gray-600 text-sm">
                   Click the link in your email to verify your account.
                 </p>
-              </div>
+              </>
             )}
           </div>
 
           {!isVerified && (
             <Alert className="border-blue-200 bg-blue-50">
               <AlertDescription className="text-blue-800">
-                <strong>Can't find the email?</strong> Check your spam folder or wait a few minutes for it to arrive.
+                <strong>Can't find the email?</strong> Check your spam folder or wait a few minutes.
               </AlertDescription>
             </Alert>
           )}
 
           <div className="space-y-3">
             {isVerified ? (
-              <Button 
+              <Button
                 onClick={onContinueToLogin}
                 className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white"
               >
@@ -130,7 +139,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onContinueToLogin, email }: E
             ) : (
               <>
                 {showResendButton && (
-                  <Button 
+                  <Button
                     onClick={handleResendEmail}
                     disabled={isResending}
                     variant="outline"
@@ -149,22 +158,13 @@ const EmailVerificationModal = ({ isOpen, onClose, onContinueToLogin, email }: E
                     )}
                   </Button>
                 )}
-                
-                {/* Demo button - remove in production */}
-                <Button 
-                  onClick={simulateVerification}
-                  variant="outline"
-                  className="w-full h-11 border-dashed"
-                >
-                  Simulate Verification (Demo)
-                </Button>
-                
-                <Button 
+
+                <Button
                   onClick={onContinueToLogin}
                   variant="ghost"
                   className="w-full h-11"
                 >
-                  I'll verify later - Continue to Login
+                  I'll verify later – Continue to Login
                 </Button>
               </>
             )}

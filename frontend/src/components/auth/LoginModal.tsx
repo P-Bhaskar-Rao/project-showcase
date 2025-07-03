@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import axios from "axios";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Github, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const API_URL=import.meta.env.VITE_API_URL
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required")
@@ -26,7 +27,13 @@ interface LoginModalProps {
   onLoginSuccess?: () => void;
 }
 
-const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPassword, onLoginSuccess }: LoginModalProps) => {
+const LoginModal = ({
+  isOpen,
+  onClose,
+  onSwitchToSignup,
+  onSwitchToForgotPassword,
+  onLoginSuccess
+}: LoginModalProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
 
@@ -39,27 +46,37 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    // TODO: Implement actual login logic
-    console.log("Login attempt:", data);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast({
-      title: "Welcome back!",
-      description: "You have successfully signed in."
-    });
-    onLoginSuccess?.();
-    onClose();
+    try {
+      const response = await axios.post(`${API_URL}/auth/login`, data, {
+        withCredentials: true
+      });
+
+      if (response.data.success) {
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in."
+        });
+
+        onLoginSuccess?.();
+        onClose();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description:
+          error.response?.data?.error || "Invalid email or password.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleSocialAuth = (provider: string) => {
-    // TODO: Implement social authentication
-    console.log(`${provider} login`);
-    toast({
-      title: "Social login",
-      description: `Signing in with ${provider}...`
-    });
+  const handleSocialAuth = (provider: "Google" | "GitHub") => {
+    const base = "/api/auth";
+    if (provider === "Google") {
+      window.location.href = `${base}/google`;
+    } else {
+      window.location.href = `${base}/github`;
+    }
   };
 
   return (
@@ -77,7 +94,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
             <Button
               variant="outline"
               className="w-full h-11"
-              onClick={() => handleSocialAuth('Google')}
+              onClick={() => handleSocialAuth("Google")}
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -90,7 +107,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
             <Button
               variant="outline"
               className="w-full h-11"
-              onClick={() => handleSocialAuth('GitHub')}
+              onClick={() => handleSocialAuth("GitHub")}
             >
               <Github className="w-5 h-5 mr-2" />
               Continue with GitHub
@@ -153,8 +170,8 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
               </button>
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white"
               disabled={isSubmitting}
             >
@@ -164,7 +181,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onSwitchToForgotPasswor
 
           <div className="text-center text-sm">
             <span className="text-gray-600">
-              Don't have an account?{' '}
+              Don't have an account?{" "}
               <button
                 type="button"
                 className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline"

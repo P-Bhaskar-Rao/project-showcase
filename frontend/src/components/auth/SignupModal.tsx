@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import axios from "axios"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Github, Eye, EyeOff, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const API_URL=import.meta.env.VITE_API_URL
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name must be less than 50 characters"),
   email: z.string().email("Please enter a valid email address"),
@@ -54,39 +55,41 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin, onSignupSuccess }: Sign
 
   const password = watch("password", "");
 
-  const checkPasswordStrength = (password: string): PasswordStrength => {
-    return {
-      hasLength: password.length >= 8,
-      hasUppercase: /[A-Z]/.test(password),
-      hasLowercase: /[a-z]/.test(password),
-      hasNumber: /\d/.test(password),
-      hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-    };
-  };
+  const checkPasswordStrength = (password: string): PasswordStrength => ({
+    hasLength: password.length >= 8,
+    hasUppercase: /[A-Z]/.test(password),
+    hasLowercase: /[a-z]/.test(password),
+    hasNumber: /\d/.test(password),
+    hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+  });
 
   const passwordStrength = checkPasswordStrength(password);
 
   const onSubmit = async (data: SignupFormData) => {
-    // TODO: Implement actual signup logic
-    console.log("Signup attempt:", data);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    onSignupSuccess(data.email);
-    toast({
-      title: "Account created!",
-      description: "Please check your email to verify your account."
-    });
+    try {
+      const response = await axios.post(`${API_URL}/auth/signup`, data, { withCredentials: true });
+
+      if (response.data.success) {
+        toast({
+          title: "Account created!",
+          description: "Please check your email to verify your account."
+        });
+        onSignupSuccess(data.email);
+      }
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || "Signup failed. Please try again.";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSocialAuth = (provider: string) => {
-    // TODO: Implement social authentication
-    console.log(`${provider} signup`);
-    toast({
-      title: "Social signup",
-      description: `Signing up with ${provider}...`
-    });
+    const base = "/api/auth";
+    window.location.href = provider === "Google" ? `${base}/google` : `${base}/github`;
   };
 
   const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => (
@@ -106,7 +109,6 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin, onSignupSuccess }: Sign
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Social Login Buttons */}
           <div className="space-y-3">
             <Button
               variant="outline"
@@ -138,34 +140,17 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin, onSignupSuccess }: Sign
             </div>
           </div>
 
-          {/* Signup Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="Enter your full name"
-                {...register("name")}
-                className="h-11"
-              />
-              {errors.name && (
-                <p className="text-sm text-red-600">{errors.name.message}</p>
-              )}
+              <Input id="name" type="text" placeholder="Enter your full name" {...register("name")} className="h-11" />
+              {errors.name && <p className="text-sm text-red-600">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                {...register("email")}
-                className="h-11"
-              />
-              {errors.email && (
-                <p className="text-sm text-red-600">{errors.email.message}</p>
-              )}
+              <Input id="email" type="email" placeholder="Enter your email" {...register("email")} className="h-11" />
+              {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -186,11 +171,7 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin, onSignupSuccess }: Sign
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-sm text-red-600">{errors.password.message}</p>
-              )}
-              
-              {/* Password Strength Indicator */}
+              {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
               {password && (
                 <div className="space-y-2 p-3 bg-gray-50 rounded-md">
                   <p className="text-sm font-medium text-gray-700">Password requirements:</p>
@@ -205,18 +186,14 @@ const SignupModal = ({ isOpen, onClose, onSwitchToLogin, onSignupSuccess }: Sign
               )}
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white"
-              disabled={isSubmitting}
-            >
+            <Button type="submit" className="w-full h-11 bg-emerald-600 hover:bg-emerald-700 text-white" disabled={isSubmitting}>
               {isSubmitting ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
 
           <div className="text-center text-sm">
             <span className="text-gray-600">
-              Already have an account?{' '}
+              Already have an account?{" "}
               <button
                 type="button"
                 className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline"
