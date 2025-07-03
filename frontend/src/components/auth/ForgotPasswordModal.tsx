@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Mail, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios"; // Import axios
+
+const API_URL = import.meta.env.VITE_API_URL; // Define API_URL
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address")
@@ -37,18 +40,28 @@ const ForgotPasswordModal = ({ isOpen, onClose, onBackToLogin }: ForgotPasswordM
   });
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
-    // TODO: Implement actual forgot password logic
-    console.log("Forgot password request for:", data.email);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setIsEmailSent(true);
-    setSentEmail(data.email);
-    toast({
-      title: "Reset link sent",
-      description: "If an account exists, a reset link will be sent to your email."
-    });
+    try {
+      // Implement actual forgot password logic
+      const response = await axios.post(`${API_URL}/auth/forgot-password`, { email: data.email });
+      
+      if (response.data.success) {
+        setIsEmailSent(true);
+        setSentEmail(data.email);
+        toast({
+          title: "Reset link sent",
+          description: response.data.message || "If an account exists, a reset link will be sent to your email."
+        });
+      }
+    } catch (error: any) {
+      console.error("Forgot password request failed:", error);
+      const message = error.response?.data?.error || "Failed to send reset link. Please try again.";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive"
+      });
+      setIsEmailSent(false); // Ensure form is visible again on error
+    }
   };
 
   const handleReset = () => {

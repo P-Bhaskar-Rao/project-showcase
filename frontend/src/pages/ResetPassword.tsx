@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, CheckCircle, XCircle, Key, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios"; // Import axios
+
+const API_URL = import.meta.env.VITE_API_URL; // Define API_URL
 
 const resetPasswordSchema = z.object({
   password: z.string()
@@ -60,27 +62,41 @@ const ResetPassword = () => {
   const password = watch("password", "");
 
   useEffect(() => {
-    if (!token) {
+    if (!token || !email) {
       setTokenValid(false);
       return;
     }
 
-    // TODO: Validate token with backend
     const validateToken = async () => {
-      console.log("Validating token:", token);
-      // Simulate token validation
-      setTimeout(() => {
-        // Mock validation - in real app, check with backend
-        if (token === 'expired') {
-          setTokenValid(false);
-        } else {
+      try {
+        // Validate token with backend
+        const response = await axios.get(`${API_URL}/auth/check-reset-token`, {
+          params: { token, email }
+        });
+        
+        if (response.data.success) {
           setTokenValid(true);
+        } else {
+          setTokenValid(false);
+          toast({
+            title: "Invalid Link",
+            description: response.data.error || "This password reset link is invalid or has expired.",
+            variant: "destructive"
+          });
         }
-      }, 1000);
+      } catch (error: any) {
+        console.error("Token validation failed:", error);
+        setTokenValid(false);
+        toast({
+          title: "Invalid Link",
+          description: error.response?.data?.error || "This password reset link is invalid or has expired.",
+          variant: "destructive"
+        });
+      }
     };
 
     validateToken();
-  }, [token]);
+  }, [token, email, toast, API_URL]); // Added API_URL to dependencies
 
   const checkPasswordStrength = (password: string): PasswordStrength => {
     return {
@@ -95,22 +111,48 @@ const ResetPassword = () => {
   const passwordStrength = checkPasswordStrength(password);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
-    // TODO: Implement actual password reset logic
-    console.log("Resetting password for token:", token);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setIsSuccess(true);
-    toast({
-      title: "Password reset successful!",
-      description: "Your password has been updated. You can now sign in with your new password."
-    });
-    
-    // Redirect to home after success
-    setTimeout(() => {
-      navigate('/');
-    }, 3000);
+    try {
+      // Implement actual password reset logic
+      const response = await axios.post(`${API_URL}/auth/reset-password`, 
+        { 
+          password: data.password,
+          confirmPassword: data.confirmPassword // Send confirmPassword as well
+        }, 
+        { params: { token, email } } // Send token and email as query params
+      );
+      
+      if (response.data.success) {
+        setIsSuccess(true);
+        toast({
+          title: "Password reset successful!",
+          description: response.data.message || "Your password has been updated. You can now sign in with your new password."
+        });
+        
+        // Redirect to home after success
+        setTimeout(() => {
+          navigate('/');
+        }, 3000);
+      }
+    } catch (error: any) {
+      console.error("Password reset failed:", error);
+      const message = error.response?.data?.error || "Failed to reset password. Please try again.";
+      // For validation errors, try to get specific details
+      if (error.response?.data?.details && Array.isArray(error.response.data.details) && error.response.data.details.length > 0) {
+        // Display the first validation error message from the backend
+        toast({
+          title: "Validation Error",
+          description: error.response.data.details[0].message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive"
+        });
+      }
+      setIsSuccess(false); // Ensure success state is false on error
+    }
   };
 
   const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => (

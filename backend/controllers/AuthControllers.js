@@ -1,12 +1,15 @@
+// src/controllers/auth.controller.js
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
-const { generateTokenPair, setRefreshTokenCookie, clearRefreshTokenCookie, verifyRefreshToken } = require('../utils/jwt'); // Adjusted path
-const { sendEmail, emailTemplates, FRONTEND_URL } = require('../utils/email'); // Adjusted path
+const { generateTokenPair, setRefreshTokenCookie, clearRefreshTokenCookie, verifyRefreshToken } = require('../utils/jwt');
+const { sendEmail, emailTemplates, FRONTEND_URL } = require('../utils/email');
 
 
 exports.signup = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
+
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ success: false, error: 'Email already registered.' });
@@ -14,11 +17,12 @@ exports.signup = async (req, res, next) => {
 
     const user = new User({ name, email, password });
     
- 
+    // Generate email verification token
     const verificationToken = user.generateVerificationToken();
+    
     await user.save();
 
-   
+    // Send verification email
     const verificationLink = `${FRONTEND_URL}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
     await sendEmail({
       to: user.email,
@@ -38,7 +42,6 @@ exports.signup = async (req, res, next) => {
   }
 };
 
-
 exports.verifyEmail = async (req, res, next) => {
   try {
     const { token, email } = req.query;
@@ -46,6 +49,7 @@ exports.verifyEmail = async (req, res, next) => {
     const user = await User.findByVerificationToken(email, token);
 
     if (!user) {
+      // Redirect to frontend with an error status or message
       return res.redirect(`${FRONTEND_URL}/verify-email?status=expired&email=${encodeURIComponent(email)}`);
     }
 
@@ -60,22 +64,6 @@ exports.verifyEmail = async (req, res, next) => {
     res.redirect(`${FRONTEND_URL}/verify-email?status=error&email=${encodeURIComponent(req.query.email || '')}`);
   }
 };
-
-exports.checkEmailVerificationStatus = async (req, res, next) => {
-  try {
-    const { email } = req.query;
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found.' });
-    }
-
-    res.status(200).json({ success: true, isVerified: user.isVerified });
-  } catch (error) {
-    next(error);
-  }
-};
-
 
 exports.resendVerificationEmail = async (req, res, next) => {
   try {
@@ -215,11 +203,7 @@ exports.oauthCallbackSuccess = (req, res) => {
   }
 };
 
-/**
- * Handles OAuth login failure callback.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- */
+
 exports.oauthCallbackFailure = (req, res) => {
   res.redirect(`${FRONTEND_URL}/auth-error?message=OAuth authentication failed.`);
 };
@@ -360,6 +344,31 @@ exports.forgotPassword = async (req, res, next) => {
     res.status(200).json({ success: true, message: 'If an account with that email exists, a password reset link has been sent.' });
   } catch (error) {
     next(error);
+  }
+};
+
+
+exports.checkResetTokenValidity = async (req, res, next) => {
+  try {
+    const { token, email } = req.query;
+
+    if (!token || !email) {
+      return res.status(400).json({ success: false, error: 'Token and email are required.' });
+    }
+
+    const user = await User.findByPasswordResetToken(email, token);
+
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired password reset link.' });
+    }
+
+    // If user is found and token is valid/not expired by findByPasswordResetToken logic
+    res.status(200).json({ success: true, message: 'Password reset link is valid.' });
+
+  } catch (error) {
+    console.error('Error checking reset token validity:', error);
+    // Be careful not to expose too much detail in production errors
+    res.status(500).json({ success: false, error: 'An unexpected error occurred while validating the link.' });
   }
 };
 

@@ -1,28 +1,21 @@
-// routes/AuthRoutes.js
+// src/routes/auth.routes.js
 const express = require('express');
 const router = express.Router();
-const authController = require('../controllers/AuthControllers'); 
-const {
-  validateBody,
-  validateQuery,
-  signupSchema,
-  loginSchema,
-  forgotPasswordSchema,
-  resetPasswordSchema,
-  resendVerificationEmailSchema,
-  emailVerificationQuerySchema,
-  passwordResetQuerySchema
-} = require('../utils/zodSchemas');
-const authMiddleware = require('../middleware/auth'); 
+const authController = require('../controllers/AuthControllers');
+const { validateBody, validateQuery, signupSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, resendVerificationEmailSchema, emailVerificationQuerySchema, passwordResetQuerySchema } = require('../utils/zodSchemas');
+const authMiddleware = require('../middleware/auth');
 const passport = require('passport');
 
 // Public Routes
 router.post('/signup', validateBody(signupSchema), authController.signup);
 router.get('/verify-email', validateQuery(emailVerificationQuerySchema), authController.verifyEmail);
-router.get('/check-verification', validateQuery(emailVerificationQuerySchema.pick({ email: true })), authController.checkEmailVerificationStatus);
 router.post('/resend-verification', validateBody(resendVerificationEmailSchema), authController.resendVerificationEmail);
 router.post('/login', validateBody(loginSchema), authController.login);
 router.post('/forgot-password', validateBody(forgotPasswordSchema), authController.forgotPassword);
+
+// NEW ROUTE: Check Password Reset Token Validity
+router.get('/check-reset-token', validateQuery(passwordResetQuerySchema), authController.checkResetTokenValidity);
+
 router.post('/reset-password', validateBody(resetPasswordSchema), validateQuery(passwordResetQuerySchema), authController.resetPassword);
 router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
@@ -42,7 +35,7 @@ router.get(
   authController.oauthCallbackSuccess
 );
 
-// Protected Routes
+// Protected Routes (require accessToken)
 router.post('/logout-all', authMiddleware, authController.logoutAllDevices);
 
 module.exports = router;

@@ -1,5 +1,4 @@
-
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react"; // Import useEffect
 import { useToast } from "@/hooks/use-toast";
 import AuthModal from "@/components/AuthModal";
 import AuthorModal from "@/components/AuthorModal";
@@ -9,6 +8,7 @@ import SearchFilters from "@/components/SearchFilters";
 import ProjectGrid from "@/components/ProjectGrid";
 import { useProjectFilters } from "@/hooks/useProjectFilters";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useAuthStore } from "@/store/useAuthStore"; // Import your Zustand store
 
 interface Project {
   id: string;
@@ -175,10 +175,17 @@ const Index = () => {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [selectedAuthor, setSelectedAuthor] = useState<Author | null>(null);
   const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Initialize isLoggedIn based on Zustand store's user status
+  const user = useAuthStore((state) => state.user);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!user); // Set initial state based on user existence
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>(sampleProjects);
   const { toast } = useToast();
+
+  // Effect to update isLoggedIn whenever the user state in Zustand changes
+  useEffect(() => {
+    setIsLoggedIn(!!user);
+  }, [user]);
 
   // Use custom hooks
   const {
@@ -198,6 +205,7 @@ const Index = () => {
     setIsAuthModalOpen(true);
   };
 
+  // Pass isLoggedIn directly from state, which is now synced with Zustand
   const { favorites, toggleFavorite } = useFavorites(isLoggedIn, openAuthModal);
 
   const techOptions = useMemo(() => 
@@ -286,7 +294,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       <Header 
-        isLoggedIn={isLoggedIn}
+        isLoggedIn={isLoggedIn} // Pass the state synced with Zustand
         onAuthModalOpen={openAuthModal}
         onSubmitProject={handleSubmitProject}
       />
@@ -308,7 +316,7 @@ const Index = () => {
 
         <ProjectGrid
           projects={filteredProjects}
-          isLoggedIn={isLoggedIn}
+          isLoggedIn={isLoggedIn} // Pass the state synced with Zustand
           favorites={favorites}
           onToggleFavorite={toggleFavorite}
           onAuthorClick={openAuthorModal}
@@ -335,7 +343,7 @@ const Index = () => {
         onClose={() => setIsAuthModalOpen(false)}
         mode={authMode}
         onModeChange={setAuthMode}
-        onAuthSuccess={() => setIsLoggedIn(true)}
+        onAuthSuccess={() => setIsLoggedIn(true)} // This will now also update the local state
       />
       
       <AuthorModal

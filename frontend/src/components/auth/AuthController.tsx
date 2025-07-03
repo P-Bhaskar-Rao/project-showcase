@@ -1,22 +1,29 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SignupModal from "./SignupModal";
 import EmailVerificationModal from "./EmailVerificationModal";
 import LoginModal from "./LoginModal";
 import ForgotPasswordModal from "./ForgotPasswordModal";
+import { useAuthStore } from "@/store/useAuthStore"; // ✅ Import Zustand store
 
 interface AuthControllerProps {
-  initialMode?: 'login' | 'signup';
+  initialMode?: "login" | "signup";
   isOpen: boolean;
   onClose: () => void;
   onAuthSuccess?: () => void;
 }
 
-type AuthMode = 'signup' | 'email-verification' | 'login' | 'forgot-password';
+type AuthMode = "signup" | "email-verification" | "login" | "forgot-password";
 
-const AuthController = ({ initialMode = 'login', isOpen, onClose, onAuthSuccess }: AuthControllerProps) => {
+const AuthController = ({
+  initialMode = "login",
+  isOpen,
+  onClose,
+  onAuthSuccess,
+}: AuthControllerProps) => {
   const [currentMode, setCurrentMode] = useState<AuthMode>(initialMode);
   const [verificationEmail, setVerificationEmail] = useState("");
+
+  const user = useAuthStore((state) => state.user); // ✅ Access user from Zustand
 
   const handleClose = () => {
     setCurrentMode(initialMode);
@@ -26,26 +33,33 @@ const AuthController = ({ initialMode = 'login', isOpen, onClose, onAuthSuccess 
 
   const handleSignupSuccess = (email: string) => {
     setVerificationEmail(email);
-    setCurrentMode('email-verification');
+    setCurrentMode("email-verification");
   };
 
   const handleVerificationComplete = () => {
-    setCurrentMode('login');
+    setCurrentMode("login");
   };
+
+  // ✅ Auto-close when user logs in
+  useEffect(() => {
+    if (user && isOpen) {
+      handleClose();
+    }
+  }, [user, isOpen]);
 
   const renderCurrentModal = () => {
     switch (currentMode) {
-      case 'signup':
+      case "signup":
         return (
           <SignupModal
             isOpen={isOpen}
             onClose={handleClose}
-            onSwitchToLogin={() => setCurrentMode('login')}
+            onSwitchToLogin={() => setCurrentMode("login")}
             onSignupSuccess={handleSignupSuccess}
           />
         );
-      
-      case 'email-verification':
+
+      case "email-verification":
         return (
           <EmailVerificationModal
             isOpen={isOpen}
@@ -54,27 +68,27 @@ const AuthController = ({ initialMode = 'login', isOpen, onClose, onAuthSuccess 
             email={verificationEmail}
           />
         );
-      
-      case 'login':
+
+      case "login":
         return (
           <LoginModal
             isOpen={isOpen}
             onClose={handleClose}
-            onSwitchToSignup={() => setCurrentMode('signup')}
-            onSwitchToForgotPassword={() => setCurrentMode('forgot-password')}
+            onSwitchToSignup={() => setCurrentMode("signup")}
+            onSwitchToForgotPassword={() => setCurrentMode("forgot-password")}
             onLoginSuccess={onAuthSuccess}
           />
         );
-      
-      case 'forgot-password':
+
+      case "forgot-password":
         return (
           <ForgotPasswordModal
             isOpen={isOpen}
             onClose={handleClose}
-            onBackToLogin={() => setCurrentMode('login')}
+            onBackToLogin={() => setCurrentMode("login")}
           />
         );
-      
+
       default:
         return null;
     }

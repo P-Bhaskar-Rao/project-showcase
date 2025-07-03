@@ -1,4 +1,3 @@
-
 import AuthController from "./auth/AuthController";
 
 interface AuthModalProps {

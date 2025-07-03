@@ -1,5 +1,16 @@
-
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"; // Import DropdownMenu components
+import { useAuthStore } from "@/store/useAuthStore"; // Import Zustand store
+import { User as UserIcon, LogOut } from "lucide-react"; // Import icons
+import { useToast } from "@/hooks/use-toast"; // Import useToast for notifications
+import axios from "axios"; // Import axios
 
 interface HeaderProps {
   isLoggedIn: boolean;
@@ -7,7 +18,51 @@ interface HeaderProps {
   onSubmitProject: () => void;
 }
 
+const API_URL = import.meta.env.VITE_API_URL; // Ensure API_URL is accessible
+
 const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) => {
+  const user = useAuthStore((state) => state.user); // Get user from Zustand
+  const clearAuth = useAuthStore((state) => state.clearAuth); // Get clearAuth from Zustand
+  const { toast } = useToast(); // Initialize toast
+
+  // Function to get the first letter of the user's name
+  const getUserInitial = (name: string | null | undefined) => {
+    return name ? name.charAt(0).toUpperCase() : 'U';
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Call your backend logout API to clear refresh token from DB and cookie
+      const response = await axios.post(`${API_URL}/auth/logout`, {}, {
+        withCredentials: true // Important to send the httpOnly refresh token cookie
+      });
+
+      if (response.data.success) {
+        toast({
+          title: "Logged out successfully!",
+          description: "You have been logged out of your account.",
+        });
+      } else {
+        // Even if backend reports failure, clear frontend state for consistency
+        toast({
+          title: "Logout attempted",
+          description: response.data.message || "Could not fully log out on server, but frontend state cleared.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error("Logout failed on backend:", error);
+      toast({
+        title: "Logout failed",
+        description: error.response?.data?.error || "An error occurred during logout.",
+        variant: "destructive",
+      });
+    } finally {
+      // Always clear frontend state, regardless of backend success/failure
+      clearAuth();
+    }
+  };
+
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -18,26 +73,56 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
             </h1>
             <p className="text-gray-600 mt-1 text-sm sm:text-base">Discover amazing projects built by talented interns</p>
           </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          {/* Added justify-end to align items to the right on small screens */}
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             {isLoggedIn ? (
               <>
-                <Button 
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1 sm:flex-none"
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-md text-sm sm:px-4 sm:py-2 sm:text-base" // Adjusted sizing for small screens
                   onClick={onSubmitProject}
                 >
                   Submit Project
                 </Button>
-                <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white font-semibold">
-                  U
-                </div>
+                {/* User Profile Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="relative h-9 w-9 rounded-full overflow-hidden p-0 flex items-center justify-center border border-emerald-500" // Added border, overflow-hidden, p-0, flex/items/justify for better avatar look
+                    >
+                      <div className="w-full h-full bg-emerald-500 flex items-center justify-center text-white font-semibold text-sm">
+                        {getUserInitial(user?.name)} {/* Dynamically get user initial */}
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user?.name}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <>
-                <Button variant="outline" onClick={() => onAuthModalOpen('login')} className="flex-1 sm:flex-none">
+                <Button
+                  variant="outline"
+                  onClick={() => onAuthModalOpen('login')}
+                  className="w-full sm:w-auto px-4 py-2 rounded-md" // Adjusted sizing
+                >
                   Sign In
                 </Button>
-                <Button 
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1 sm:flex-none"
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto px-4 py-2 rounded-md" // Adjusted sizing
                   onClick={() => onAuthModalOpen('signup')}
                 >
                   Sign Up

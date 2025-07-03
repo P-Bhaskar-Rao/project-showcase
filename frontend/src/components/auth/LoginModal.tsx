@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Github, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/store/useAuthStore";
 
-const API_URL=import.meta.env.VITE_API_URL
+const API_URL = import.meta.env.VITE_API_URL;
+
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required")
@@ -36,6 +38,7 @@ const LoginModal = ({
 }: LoginModalProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
+  const setAuth = useAuthStore((state) => state.setAuth); 
 
   const {
     register,
@@ -52,6 +55,11 @@ const LoginModal = ({
       });
 
       if (response.data.success) {
+        const { user, accessToken } = response.data;
+
+        // ✅ Store user and token in Zustand
+        setAuth(user, accessToken);
+
         toast({
           title: "Welcome back!",
           description: "You have successfully signed in."
@@ -63,20 +71,18 @@ const LoginModal = ({
     } catch (error: any) {
       toast({
         title: "Login failed",
-        description:
-          error.response?.data?.error || "Invalid email or password.",
+        description: error.response?.data?.error || "Invalid email or password.",
         variant: "destructive"
       });
     }
   };
 
   const handleSocialAuth = (provider: "Google" | "GitHub") => {
-    const base = "/api/auth";
-    if (provider === "Google") {
-      window.location.href = `${base}/google`;
-    } else {
-      window.location.href = `${base}/github`;
-    }
+    // Corrected: Use API_URL directly, then append '/auth'
+    // If API_URL is http://localhost:5000/api, then this becomes http://localhost:5000/api/auth
+    const authBaseUrl = API_URL; 
+    console.log(`Initiating OAuth from LoginModal with full URL: ${authBaseUrl}/auth/${provider.toLowerCase()}`); 
+    window.location.href = provider === "Google" ? `${authBaseUrl}/auth/google` : `${authBaseUrl}/auth/github`;
   };
 
   return (
