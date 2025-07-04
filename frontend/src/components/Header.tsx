@@ -58,7 +58,6 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
         variant: "destructive",
       });
     } finally {
-      // Always clear frontend state, regardless of backend success/failure
       clearAuth();
     }
   };
@@ -69,11 +68,10 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-emerald-600">
-              InternShowcase
+              ProjectShowcase
             </h1>
             <p className="text-gray-600 mt-1 text-sm sm:text-base">Discover amazing projects built by talented interns</p>
           </div>
-          {/* Added justify-end to align items to the right on small screens */}
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
             {isLoggedIn ? (
               <>

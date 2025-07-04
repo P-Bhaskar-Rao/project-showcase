@@ -1,4 +1,3 @@
-// utils/jwt.js
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
@@ -8,7 +7,7 @@ const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secre
 const JWT_ACCESS_EXPIRY = process.env.JWT_ACCESS_EXPIRY || '15m';
 const JWT_REFRESH_EXPIRY = process.env.JWT_REFRESH_EXPIRY || '7d';
 
-// Generate access token
+
 const generateAccessToken = (payload) => {
   try {
     const tokenPayload = {
@@ -28,7 +27,6 @@ const generateAccessToken = (payload) => {
   }
 };
 
-// Generate refresh token
 const generateRefreshToken = (payload) => {
   try {
     const tokenPayload = {
@@ -48,7 +46,7 @@ const generateRefreshToken = (payload) => {
   }
 };
 
-// Verify access token
+
 const verifyAccessToken = (token) => {
   try {
     return jwt.verify(token, JWT_ACCESS_SECRET, {
@@ -66,7 +64,7 @@ const verifyAccessToken = (token) => {
   }
 };
 
-// Verify refresh token
+
 const verifyRefreshToken = (token) => {
   try {
     return jwt.verify(token, JWT_REFRESH_SECRET, {

@@ -1,7 +1,6 @@
-// models/User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto'); // Import crypto for token generation
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -96,7 +95,7 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// ✅ Only keep indexes not defined inline
+
 userSchema.index({ emailVerificationToken: 1 });
 userSchema.index({ passwordResetToken: 1 });
 

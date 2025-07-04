@@ -1,4 +1,3 @@
-// src/controllers/auth.controller.js
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const { generateTokenPair, setRefreshTokenCookie, clearRefreshTokenCookie, verifyRefreshToken } = require('../utils/jwt');
@@ -362,12 +361,12 @@ exports.checkResetTokenValidity = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Invalid or expired password reset link.' });
     }
 
-    // If user is found and token is valid/not expired by findByPasswordResetToken logic
+    
     res.status(200).json({ success: true, message: 'Password reset link is valid.' });
 
   } catch (error) {
     console.error('Error checking reset token validity:', error);
-    // Be careful not to expose too much detail in production errors
+   
     res.status(500).json({ success: false, error: 'An unexpected error occurred while validating the link.' });
   }
 };
@@ -376,7 +375,7 @@ exports.checkResetTokenValidity = async (req, res, next) => {
 exports.resetPassword = async (req, res, next) => {
   try {
     const { token, email } = req.query;
-    const { password } = req.body; // Zod already validates password and confirmPassword match
+    const { password } = req.body; 
 
     const user = await User.findByPasswordResetToken(email, token);
 

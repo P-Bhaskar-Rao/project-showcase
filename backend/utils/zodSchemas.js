@@ -1,4 +1,4 @@
-// utils/zodSchemas.js
+
 const { z } = require('zod');
 
 // Password validation regex
@@ -60,7 +60,7 @@ const resendVerificationEmailSchema = z.object({
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, { message: 'Current password is required' }),
   newPassword: passwordSchema,
-  confirmNewPassword: z.string() // Renamed to avoid conflict with resetPasswordSchema
+  confirmNewPassword: z.string()
 }).refine((data) => data.newPassword === data.confirmNewPassword, {
   message: 'New passwords do not match',
   path: ['confirmNewPassword']

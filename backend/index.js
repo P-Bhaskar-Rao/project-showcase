@@ -1,4 +1,3 @@
-// index.js
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -26,7 +25,7 @@ app.use(helmet());
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    credentials: true, // Allow cookies to be sent
+    credentials: true, 
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
@@ -49,9 +48,9 @@ const authLimiter = rateLimit({
 app.use(limiter);
 
 // Body parsing middleware
-app.use(express.json({ limit: "10mb" })); // Parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
-app.use(cookieParser()); // Parse cookies
+app.use(express.json({ limit: "10mb" })); 
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); 
 
 // Session configuration for Passport (required for OAuth)
 app.use(
@@ -127,11 +126,11 @@ const startServer = async () => {
       );
       console.log(
         `Server URL: ${process.env.SERVER_URL || "http://localhost:5000"}`
-      ); // Ensure this is logged
+      ); 
     });
   } catch (error) {
     console.error("Failed to start server:", error);
-    process.exit(1); // Exit process with failure
+    process.exit(1);
   }
 };
 
@@ -155,4 +154,4 @@ process.on("SIGINT", () => {
   });
 });
 
-module.exports = app; // Export app for testing purposes
+
