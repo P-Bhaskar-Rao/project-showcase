@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { X, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,8 +24,12 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
     category: "",
     githubUrl: "",
     liveUrl: "",
+    projectType: "personal", // "personal" or "internship"
+    companyName: "",
     internshipStartDate: "",
     internshipEndDate: "",
+    projectStartDate: "",
+    projectEndDate: "",
     architectureDiagram: "",
     techStack: [] as string[]
   });
@@ -62,12 +67,23 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
     }));
   };
 
+  const formatMonthYear = (monthYear: string) => {
+    if (!monthYear) return "";
+    const date = new Date(monthYear + "-01");
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.description || !formData.author || 
-        !formData.category || !formData.githubUrl || !formData.internshipStartDate ||
-        !formData.internshipEndDate || formData.techStack.length === 0) {
+    // Basic validation
+    const requiredFields = ['name', 'description', 'author', 'category', 'githubUrl'];
+    const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
+    
+    if (missingFields.length > 0 || formData.techStack.length === 0) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields and add at least one technology.",
@@ -76,14 +92,43 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
       return;
     }
 
-    // Validate that end date is after start date
-    if (new Date(formData.internshipEndDate) <= new Date(formData.internshipStartDate)) {
-      toast({
-        title: "Invalid Dates",
-        description: "End date must be after start date.",
-        variant: "destructive",
-      });
-      return;
+    // Project type specific validation
+    if (formData.projectType === "internship") {
+      if (!formData.companyName || !formData.internshipStartDate || !formData.internshipEndDate) {
+        toast({
+          title: "Missing Internship Information",
+          description: "Please fill in company name and internship dates.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (new Date(formData.internshipEndDate + "-01") <= new Date(formData.internshipStartDate + "-01")) {
+        toast({
+          title: "Invalid Dates",
+          description: "End date must be after start date.",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      if (!formData.projectStartDate || !formData.projectEndDate) {
+        toast({
+          title: "Missing Project Information",
+          description: "Please fill in project start and end dates.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (new Date(formData.projectEndDate + "-01") <= new Date(formData.projectStartDate + "-01")) {
+        toast({
+          title: "Invalid Dates",
+          description: "End date must be after start date.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -93,13 +138,9 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
         id: Date.now().toString(),
         ...formData,
         // Create a formatted period string for display
-        internshipPeriod: `${new Date(formData.internshipStartDate).toLocaleDateString('en-US', { 
-          month: 'short', 
-          year: 'numeric' 
-        })} - ${new Date(formData.internshipEndDate).toLocaleDateString('en-US', { 
-          month: 'short', 
-          year: 'numeric' 
-        })}`
+        internshipPeriod: formData.projectType === "internship" 
+          ? `${formatMonthYear(formData.internshipStartDate)} - ${formatMonthYear(formData.internshipEndDate)}`
+          : `${formatMonthYear(formData.projectStartDate)} - ${formatMonthYear(formData.projectEndDate)}`
       };
       
       onSubmit(newProject);
@@ -117,8 +158,12 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
         category: "",
         githubUrl: "",
         liveUrl: "",
+        projectType: "personal",
+        companyName: "",
         internshipStartDate: "",
         internshipEndDate: "",
+        projectStartDate: "",
+        projectEndDate: "",
         architectureDiagram: "",
         techStack: []
       });
@@ -184,6 +229,98 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
                 required
               />
             </div>
+
+            {/* Project Type */}
+            <div className="space-y-3">
+              <Label>Project Type *</Label>
+              <RadioGroup
+                value={formData.projectType}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, projectType: value }))}
+                className="flex flex-col space-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="personal" id="personal" />
+                  <Label htmlFor="personal">Personal Project</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="internship" id="internship" />
+                  <Label htmlFor="internship">Internship Project</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Conditional Fields based on Project Type */}
+            {formData.projectType === "internship" ? (
+              <>
+                {/* Company Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="companyName">Company Name *</Label>
+                  <Input
+                    id="companyName"
+                    value={formData.companyName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
+                    placeholder="Enter company name"
+                    required
+                  />
+                </div>
+
+                {/* Internship Period */}
+                <div className="space-y-4">
+                  <Label>Internship Period *</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="internshipStartDate">Start Month</Label>
+                      <Input
+                        id="internshipStartDate"
+                        type="month"
+                        value={formData.internshipStartDate}
+                        onChange={(e) => setFormData(prev => ({ ...prev, internshipStartDate: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="internshipEndDate">End Month</Label>
+                      <Input
+                        id="internshipEndDate"
+                        type="month"
+                        value={formData.internshipEndDate}
+                        onChange={(e) => setFormData(prev => ({ ...prev, internshipEndDate: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Project Period */}
+                <div className="space-y-4">
+                  <Label>Project Period *</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="projectStartDate">Start Month</Label>
+                      <Input
+                        id="projectStartDate"
+                        type="month"
+                        value={formData.projectStartDate}
+                        onChange={(e) => setFormData(prev => ({ ...prev, projectStartDate: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="projectEndDate">End Month</Label>
+                      <Input
+                        id="projectEndDate"
+                        type="month"
+                        value={formData.projectEndDate}
+                        onChange={(e) => setFormData(prev => ({ ...prev, projectEndDate: e.target.value }))}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Category */}
             <div className="space-y-2">
@@ -267,33 +404,6 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
                 onChange={(e) => setFormData(prev => ({ ...prev, architectureDiagram: e.target.value }))}
                 placeholder="https://example.com/architecture-diagram.png"
               />
-            </div>
-
-            {/* Internship Period */}
-            <div className="space-y-4">
-              <Label>Internship Period *</Label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="internshipStartDate">Start Date</Label>
-                  <Input
-                    id="internshipStartDate"
-                    type="date"
-                    value={formData.internshipStartDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, internshipStartDate: e.target.value }))}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="internshipEndDate">End Date</Label>
-                  <Input
-                    id="internshipEndDate"
-                    type="date"
-                    value={formData.internshipEndDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, internshipEndDate: e.target.value }))}
-                    required
-                  />
-                </div>
-              </div>
             </div>
 
             {/* Submit Button */}

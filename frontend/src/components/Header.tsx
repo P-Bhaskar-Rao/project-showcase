@@ -8,9 +8,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"; // Import DropdownMenu components
 import { useAuthStore } from "@/store/useAuthStore"; // Import Zustand store
-import { User as UserIcon, LogOut } from "lucide-react"; // Import icons
+import { User as UserIcon, LogOut, LayoutDashboard } from "lucide-react"; // Import icons
 import { useToast } from "@/hooks/use-toast"; // Import useToast for notifications
 import axios from "axios"; // Import axios
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
   isLoggedIn: boolean;
@@ -24,6 +25,7 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
   const user = useAuthStore((state) => state.user); // Get user from Zustand
   const clearAuth = useAuthStore((state) => state.clearAuth); // Get clearAuth from Zustand
   const { toast } = useToast(); // Initialize toast
+  const navigate = useNavigate();
 
   // Function to get the first letter of the user's name
   const getUserInitial = (name: string | null | undefined) => {
@@ -81,14 +83,23 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
                 >
                   Submit Project
                 </Button>
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-md text-sm sm:px-4 sm:py-2 sm:text-base flex items-center justify-center"
+                  onClick={() => navigate('/dashboard')}
+                  aria-label="Dashboard"
+                  title="Dashboard"
+                >
+                  <LayoutDashboard className="h-5 w-5 mr-2" />
+                  <span>Dashboard</span>
+                </Button>
                 {/* User Profile Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
-                      className="relative h-9 w-9 rounded-full overflow-hidden p-0 flex items-center justify-center border border-emerald-500" // Added border, overflow-hidden, p-0, flex/items/justify for better avatar look
+                      className="relative h-9 w-9 rounded-full overflow-hidden p-0 flex items-center justify-center border border-emerald-600" 
                     >
-                      <div className="w-full h-full bg-emerald-500 flex items-center justify-center text-white font-semibold text-sm">
+                      <div className="w-full h-full bg-emerald-600 flex items-center justify-center text-white font-semibold text-sm">
                         {getUserInitial(user?.name)} {/* Dynamically get user initial */}
                       </div>
                     </Button>
