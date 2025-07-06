@@ -105,6 +105,19 @@ export const useAuthStore = create<AuthState>()(
           });
           set({ profile: res.data.user });
           set({ profileCompleteness: res.data.isProfileComplete });
+          
+          // Update user state if name or avatar was changed
+          if (get().user) {
+            const updatedUser = { ...get().user! };
+            if (profileData.name) {
+              updatedUser.name = profileData.name;
+            }
+            if (profileData.avatar !== undefined) {
+              updatedUser.avatar = profileData.avatar;
+            }
+            set({ user: updatedUser });
+          }
+          
           console.log('[Zustand] updateProfile success', res.data.user);
           return true;
         } catch (e) {

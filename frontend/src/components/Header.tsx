@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"; // Import DropdownMenu components
 import { useAuthStore } from "@/store/useAuthStore"; // Import Zustand store
-import { User as UserIcon, LogOut, LayoutDashboard } from "lucide-react"; // Import icons
+import { User as UserIcon, LogOut, LayoutDashboard, User as UserIcon2 } from "lucide-react"; // Import icons
 import { useToast } from "@/hooks/use-toast"; // Import useToast for notifications
 import axiosInstance from "@/api/axiosInstance";
 import { useNavigate, Link, useLocation } from "react-router-dom";
@@ -55,11 +55,14 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
           variant: "destructive",
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Logout failed on backend:", error);
+      const errorMessage = error && typeof error === 'object' && 'response' in error 
+        ? (error as { response?: { data?: { error?: string } } }).response?.data?.error 
+        : "An error occurred during logout.";
       toast({
         title: "Logout failed",
-        description: error.response?.data?.error || "An error occurred during logout.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -118,9 +121,17 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
                         variant="ghost"
                         className="relative h-9 w-9 rounded-full overflow-hidden p-0 flex items-center justify-center border border-emerald-600" 
                       >
-                        <div className="w-full h-full bg-emerald-600 flex items-center justify-center text-white font-semibold text-sm">
-                          {getUserInitial(user?.name)} {/* Dynamically get user initial */}
-                        </div>
+                        {user?.avatar ? (
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-emerald-600 flex items-center justify-center text-white font-semibold text-sm">
+                            {getUserInitial(user?.name)} {/* Dynamically get user initial */}
+                          </div>
+                        )}
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -133,6 +144,10 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => navigate('/profile')}>
+                        <UserIcon2 className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Log out</span>

@@ -123,11 +123,14 @@ const ProjectCard = ({
                   <span className="truncate capitalize">{project.projectType === 'internship' ? 'Internship' : 'Personal Project'}</span>
                 </div>
                 {/* Line 4: Company/Organization (if internship) */}
-                {project.projectType === 'internship' && project.companyName && (
+                {project.projectType === 'internship' && project.companyName ? (
                   <div className="flex items-center gap-2">
                     <Building2 className="h-3 w-3 flex-shrink-0" />
                     <span className="truncate">{project.companyName}</span>
                   </div>
+                ) : (
+                  // Placeholder to keep header height consistent
+                  <div style={{ height: '20px' }} aria-hidden="true"></div>
                 )}
               </div>
             </div>

@@ -257,21 +257,14 @@ userSchema.statics.findOrCreateOAuthUser = async function(profile, provider) {
       if (profile.photos && profile.photos.length > 0) {
         user.avatar = profile.photos[0].value;
       }
-      // Ensure required fields exist for existing users
-      if (!user.skills || user.skills.length === 0) {
-        user.skills = ['Add your skills here'];
+      if (!user.skills) {
+        user.skills = [];
       }
-      if (!user.education || user.education.length === 0) {
-        user.education = [{
-          institution: 'Add your institution',
-          degree: 'Add your degree',
-          fieldOfStudy: 'Add your field of study',
-          startYear: new Date().getFullYear(),
-          endYear: new Date().getFullYear()
-        }];
+      if (!user.education) {
+        user.education = [];
       }
       if (!user.bio) {
-        user.bio = 'Add your bio here';
+        user.bio = '';
       }
       user.profileCompleted = false;
       await user.save();
@@ -289,16 +282,9 @@ userSchema.statics.findOrCreateOAuthUser = async function(profile, provider) {
       oauthProvider: provider,
       isVerified: true,
       avatar: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : null,
-      // Add default values for required fields
-      skills: ['Add your skills here'],
-      education: [{
-        institution: 'Add your institution',
-        degree: 'Add your degree',
-        fieldOfStudy: 'Add your field of study',
-        startYear: new Date().getFullYear(),
-        endYear: new Date().getFullYear()
-      }],
-      bio: 'Add your bio here',
+      skills: [],
+      education: [],
+      bio: '',
       profileCompleted: false
       // Do NOT set refreshToken here; it will be omitted if not present
     });
@@ -313,18 +299,14 @@ userSchema.statics.findOrCreateOAuthUser = async function(profile, provider) {
 
 // Instance method to check if profile is complete
 userSchema.methods.isProfileComplete = function() {
-  // Check if profile has meaningful content (not placeholder values)
-  const hasValidBio = this.bio && this.bio !== 'Add your bio here';
-  const hasValidSkills = Array.isArray(this.skills) && 
-    this.skills.length > 0 && 
-    !this.skills.every(skill => skill === 'Add your skills here');
-  const hasValidEducation = Array.isArray(this.education) && 
-    this.education.length > 0 && 
-    !this.education.every(edu => 
-      edu.institution === 'Add your institution' && 
-      edu.degree === 'Add your degree' && 
-      edu.fieldOfStudy === 'Add your field of study'
-    );
+  // Check if profile has meaningful content (not empty values)
+  const hasValidBio = this.bio && this.bio.trim() !== '';
+  const hasValidSkills = Array.isArray(this.skills) && this.skills.length > 0;
+  const hasValidEducation = Array.isArray(this.education) && this.education.length > 0 && this.education.every(edu =>
+    edu.institution && edu.institution.trim() !== '' &&
+    edu.degree && edu.degree.trim() !== '' &&
+    edu.fieldOfStudy && edu.fieldOfStudy.trim() !== ''
+  );
 
   return !!(
     this.name &&

@@ -73,8 +73,9 @@ const updateProfileSchema = z.object({
   message: 'At least one field (name or email) must be provided'
 });
 
-// Profile update schema for bio, skills, education, avatar, socialLinks
+// Profile update schema for name, bio, skills, education, avatar, socialLinks
 const profileUpdateSchema = z.object({
+  name: nameSchema.optional(),
   bio: z.string()
     .trim()
     .min(1, { message: 'Bio is required' })
@@ -95,7 +96,7 @@ const profileUpdateSchema = z.object({
     .min(1, { message: 'At least one education entry is required' })
     .optional(),
   
-  avatar: z.string().url({ message: 'Avatar must be a valid URL' }).optional(),
+  avatar: z.string().url({ message: 'Avatar must be a valid URL' }).optional().or(z.literal('')),
   
   socialLinks: z.object({
     github: z.string().url({ message: 'GitHub must be a valid URL' }).optional().or(z.literal('')),
@@ -105,7 +106,7 @@ const profileUpdateSchema = z.object({
   }).optional()
 }).refine((data) => {
   // Ensure at least one field is provided
-  return data.bio !== undefined || data.skills !== undefined || data.education !== undefined || 
+  return data.name !== undefined || data.bio !== undefined || data.skills !== undefined || data.education !== undefined || 
          data.avatar !== undefined || data.socialLinks !== undefined;
 }, {
   message: 'At least one profile field must be provided'

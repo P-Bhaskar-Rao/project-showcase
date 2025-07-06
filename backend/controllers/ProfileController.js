@@ -32,7 +32,7 @@ exports.getProfile = async (req, res, next) => {
 exports.updateProfile = async (req, res, next) => {
   try {
     const userId = req.user._id; // Use _id from attached user document
-    const { bio, skills, education, avatar, socialLinks } = req.body;
+    const { name, bio, skills, education, avatar, socialLinks } = req.body;
     
     const user = await User.findById(userId);
     
@@ -45,6 +45,7 @@ exports.updateProfile = async (req, res, next) => {
     }
     
     // Update profile fields
+    if (name !== undefined) user.name = name;
     if (bio !== undefined) user.bio = bio;
     if (skills !== undefined) user.skills = skills;
     if (education !== undefined) user.education = education;
@@ -107,50 +108,33 @@ exports.checkProfileCompleteness = async (req, res, next) => {
 // Helper function to get missing fields
 function getMissingFields(user) {
   const missingFields = [];
-  
   if (!user.avatar) missingFields.push('avatar');
-  
-  // Check bio - must not be placeholder
-  if (!user.bio || user.bio === 'Add your bio here') missingFields.push('bio');
-  
-  // Check skills - must not be placeholder
-  if (!user.skills || user.skills.length === 0 || 
-      user.skills.every(skill => skill === 'Add your skills here')) {
+  // Check bio - must not be empty
+  if (!user.bio || user.bio.trim() === '') missingFields.push('bio');
+  // Check skills - must not be empty
+  if (!user.skills || user.skills.length === 0) {
     missingFields.push('skills');
   }
-  
-  // Check education - must not be placeholder
-  if (!user.education || user.education.length === 0 || 
-      user.education.every(edu => 
-        edu.institution === 'Add your institution' && 
-        edu.degree === 'Add your degree' && 
-        edu.fieldOfStudy === 'Add your field of study'
-      )) {
+  // Check education - must not be empty
+  if (!user.education || user.education.length === 0) {
     missingFields.push('education');
   }
-  
-  // Check education subfields (only if education exists and is not placeholder)
-  if (user.education && user.education.length > 0 && 
-      !user.education.every(edu => 
-        edu.institution === 'Add your institution' && 
-        edu.degree === 'Add your degree' && 
-        edu.fieldOfStudy === 'Add your field of study'
-      )) {
+  // Check education subfields (only if education exists)
+  if (user.education && user.education.length > 0) {
     user.education.forEach((edu, index) => {
-      if (!edu.institution || edu.institution === 'Add your institution') {
+      if (!edu.institution || edu.institution.trim() === '') {
         missingFields.push(`education[${index}].institution`);
       }
-      if (!edu.degree || edu.degree === 'Add your degree') {
+      if (!edu.degree || edu.degree.trim() === '') {
         missingFields.push(`education[${index}].degree`);
       }
-      if (!edu.fieldOfStudy || edu.fieldOfStudy === 'Add your field of study') {
+      if (!edu.fieldOfStudy || edu.fieldOfStudy.trim() === '') {
         missingFields.push(`education[${index}].fieldOfStudy`);
       }
       if (!edu.startYear) missingFields.push(`education[${index}].startYear`);
       if (!edu.endYear) missingFields.push(`education[${index}].endYear`);
     });
   }
-  
   return missingFields;
 }
 
