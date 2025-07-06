@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,33 +8,37 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { X, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface ProjectSubmissionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (project: any) => void;
+  initialData?: any;
+  onUpdate?: (project: any) => void;
 }
 
-const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmissionModalProps) => {
+const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpdate }: ProjectSubmissionModalProps) => {
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    author: "",
-    category: "",
-    githubUrl: "",
-    liveUrl: "",
-    projectType: "personal", // "personal" or "internship"
-    companyName: "",
-    internshipStartDate: "",
-    internshipEndDate: "",
-    projectStartDate: "",
-    projectEndDate: "",
-    architectureDiagram: "",
-    techStack: [] as string[]
+    name: initialData?.name || "",
+    description: initialData?.description || "",
+    author: initialData?.author || "",
+    category: initialData?.category || "",
+    githubUrl: initialData?.githubUrl || "",
+    liveUrl: initialData?.liveUrl || "",
+    projectType: initialData?.projectType || "personal",
+    companyName: initialData?.companyName || "",
+    internshipStartDate: initialData?.internshipStartDate || "",
+    internshipEndDate: initialData?.internshipEndDate || "",
+    projectStartDate: initialData?.projectStartDate || "",
+    projectEndDate: initialData?.projectEndDate || "",
+    architectureDiagram: initialData?.architectureDiagram || "",
+    techStack: initialData?.techStack || []
   });
   const [newTech, setNewTech] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const user = useAuthStore((state) => state.user);
 
   const categories = [
     "Web App",
@@ -49,6 +52,44 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
     "Game",
     "DevTools"
   ];
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || "",
+        description: initialData.description || "",
+        author: initialData.author || "",
+        category: initialData.category || "",
+        githubUrl: initialData.githubUrl || "",
+        liveUrl: initialData.liveUrl || "",
+        projectType: initialData.projectType || "personal",
+        companyName: initialData.companyName || "",
+        internshipStartDate: initialData.internshipStartDate || "",
+        internshipEndDate: initialData.internshipEndDate || "",
+        projectStartDate: initialData.projectStartDate || "",
+        projectEndDate: initialData.projectEndDate || "",
+        architectureDiagram: initialData.architectureDiagram || "",
+        techStack: initialData.techStack || []
+      });
+    } else if (isOpen) {
+      setFormData({
+        name: "",
+        description: "",
+        author: "",
+        category: "",
+        githubUrl: "",
+        liveUrl: "",
+        projectType: "personal",
+        companyName: "",
+        internshipStartDate: "",
+        internshipEndDate: "",
+        projectStartDate: "",
+        projectEndDate: "",
+        architectureDiagram: "",
+        techStack: []
+      });
+    }
+  }, [initialData, isOpen]);
 
   const addTechStack = () => {
     if (newTech.trim() && !formData.techStack.includes(newTech.trim())) {
@@ -80,7 +121,7 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
     e.preventDefault();
     
     // Basic validation
-    const requiredFields = ['name', 'description', 'author', 'category', 'githubUrl'];
+    const requiredFields = ['name', 'description', 'category', 'githubUrl'];
     const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
     
     if (missingFields.length > 0 || formData.techStack.length === 0) {
@@ -102,11 +143,11 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
         });
         return;
       }
-      
-      if (new Date(formData.internshipEndDate + "-01") <= new Date(formData.internshipStartDate + "-01")) {
+      // Allow same month for start and end
+      if (new Date(formData.internshipEndDate + "-01") < new Date(formData.internshipStartDate + "-01")) {
         toast({
           title: "Invalid Dates",
-          description: "End date must be after start date.",
+          description: "End date must be after or same as start date.",
           variant: "destructive",
         });
         return;
@@ -120,11 +161,11 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
         });
         return;
       }
-      
-      if (new Date(formData.projectEndDate + "-01") <= new Date(formData.projectStartDate + "-01")) {
+      // Allow same month for start and end
+      if (new Date(formData.projectEndDate + "-01") < new Date(formData.projectStartDate + "-01")) {
         toast({
           title: "Invalid Dates",
-          description: "End date must be after start date.",
+          description: "End date must be after or same as start date.",
           variant: "destructive",
         });
         return;
@@ -134,22 +175,25 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
     setIsSubmitting(true);
     
     try {
+      console.log('[DEBUG] Current user:', user);
       const newProject = {
-        id: Date.now().toString(),
+        id: initialData?.id || Date.now().toString(),
         ...formData,
-        // Create a formatted period string for display
+        author: user?.name || "",
+        authorId: user?.id || "",
         internshipPeriod: formData.projectType === "internship" 
           ? `${formatMonthYear(formData.internshipStartDate)} - ${formatMonthYear(formData.internshipEndDate)}`
           : `${formatMonthYear(formData.projectStartDate)} - ${formatMonthYear(formData.projectEndDate)}`
       };
-      
-      onSubmit(newProject);
-      
+      if (initialData && onUpdate) {
+        await onUpdate(newProject);
+      } else {
+        onSubmit(newProject);
+      }
       toast({
-        title: "Project Submitted!",
-        description: "Your project has been successfully submitted and is now visible.",
+        title: initialData ? "Project Updated!" : "Project Submitted!",
+        description: initialData ? "Your project has been updated." : "Your project has been successfully submitted and is now visible.",
       });
-      
       // Reset form
       setFormData({
         name: "",
@@ -167,11 +211,10 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
         architectureDiagram: "",
         techStack: []
       });
-      
       onClose();
     } catch (error) {
       toast({
-        title: "Submission Failed",
+        title: initialData ? "Update Failed" : "Submission Failed",
         description: "There was an error submitting your project. Please try again.",
         variant: "destructive",
       });
@@ -186,7 +229,7 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-emerald-600">Submit Your Project</CardTitle>
+          <CardTitle className="text-emerald-600">{initialData ? 'Edit Your Project' : 'Submit Your Project'}</CardTitle>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
@@ -214,18 +257,6 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit }: ProjectSubmission
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Describe your project in detail..."
                 rows={4}
-                required
-              />
-            </div>
-
-            {/* Author Name */}
-            <div className="space-y-2">
-              <Label htmlFor="author">Your Name *</Label>
-              <Input
-                id="author"
-                value={formData.author}
-                onChange={(e) => setFormData(prev => ({ ...prev, author: e.target.value }))}
-                placeholder="Enter your full name"
                 required
               />
             </div>

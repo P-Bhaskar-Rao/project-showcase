@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,44 +42,58 @@ const AuthorModal = ({ isOpen, onClose, author }: AuthorModalProps) => {
 
         <div className="space-y-6">
           {/* Bio */}
-          <div>
-            <p className="text-gray-600 leading-relaxed">{author.bio}</p>
-          </div>
+          {author.bio && author.bio !== "Add your bio here" && (
+            <div>
+              <p className="text-gray-600 leading-relaxed">{author.bio}</p>
+            </div>
+          )}
 
           {/* Contact Info */}
-          <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900">Contact Information</h4>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Mail className="h-4 w-4" />
-                <span>{author.email}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <School className="h-4 w-4" />
-                <span>{author.college}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <MapPin className="h-4 w-4" />
-                <span>{author.location}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Calendar className="h-4 w-4" />
-                <span>Joined {author.joinDate}</span>
+          {(author.email || (author.college && author.college !== "") || (author.location && author.location !== "") || (author.joinDate && author.joinDate !== "")) && (
+            <div className="space-y-3">
+              <h4 className="font-semibold text-gray-900">Contact Information</h4>
+              <div className="space-y-2">
+                {author.email && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Mail className="h-4 w-4" />
+                    <span>{author.email}</span>
+                  </div>
+                )}
+                {author.college && author.college !== "" && author.college !== "Add your college here" && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <School className="h-4 w-4" />
+                    <span>{author.college}</span>
+                  </div>
+                )}
+                {author.location && author.location !== "" && author.location !== "Add your location here" && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <MapPin className="h-4 w-4" />
+                    <span>{author.location}</span>
+                  </div>
+                )}
+                {author.joinDate && author.joinDate !== "" && author.joinDate !== "Add your join date here" && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Calendar className="h-4 w-4" />
+                    <span>Joined {author.joinDate}</span>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Skills */}
-          <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900">Skills</h4>
-            <div className="flex flex-wrap gap-2">
-              {author.skills.map((skill) => (
-                <Badge key={skill} variant="secondary" className="bg-emerald-100 text-emerald-800">
-                  {skill}
-                </Badge>
-              ))}
+          {author.skills && author.skills.length > 0 && !author.skills.includes("Add your skills here") && (
+            <div className="space-y-3">
+              <h4 className="font-semibold text-gray-900">Skills</h4>
+              <div className="flex flex-wrap gap-2">
+                {author.skills.map((skill) => (
+                  <Badge key={skill} variant="secondary" className="bg-emerald-100 text-emerald-800">
+                    {skill}
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Social Links */}
           <div className="flex gap-2">

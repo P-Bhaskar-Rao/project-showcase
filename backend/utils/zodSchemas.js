@@ -1,4 +1,3 @@
-
 const { z } = require('zod');
 
 // Password validation regex
@@ -74,6 +73,44 @@ const updateProfileSchema = z.object({
   message: 'At least one field (name or email) must be provided'
 });
 
+// Profile update schema for bio, skills, education, avatar, socialLinks
+const profileUpdateSchema = z.object({
+  bio: z.string()
+    .trim()
+    .min(1, { message: 'Bio is required' })
+    .max(500, { message: 'Bio cannot exceed 500 characters' })
+    .optional(),
+  
+  skills: z.array(z.string().trim().min(1, { message: 'Skill cannot be empty' }))
+    .min(1, { message: 'At least one skill is required' })
+    .optional(),
+  
+  education: z.array(z.object({
+    institution: z.string().trim().min(1, { message: 'Institution is required' }),
+    degree: z.string().trim().min(1, { message: 'Degree is required' }),
+    fieldOfStudy: z.string().trim().min(1, { message: 'Field of study is required' }),
+    startYear: z.number().int().min(1900).max(new Date().getFullYear() + 10, { message: 'Invalid start year' }),
+    endYear: z.number().int().min(1900).max(new Date().getFullYear() + 10, { message: 'Invalid end year' })
+  }))
+    .min(1, { message: 'At least one education entry is required' })
+    .optional(),
+  
+  avatar: z.string().url({ message: 'Avatar must be a valid URL' }).optional(),
+  
+  socialLinks: z.object({
+    github: z.string().url({ message: 'GitHub must be a valid URL' }).optional().or(z.literal('')),
+    linkedin: z.string().url({ message: 'LinkedIn must be a valid URL' }).optional().or(z.literal('')),
+    twitter: z.string().url({ message: 'Twitter must be a valid URL' }).optional().or(z.literal('')),
+    website: z.string().url({ message: 'Website must be a valid URL' }).optional().or(z.literal(''))
+  }).optional()
+}).refine((data) => {
+  // Ensure at least one field is provided
+  return data.bio !== undefined || data.skills !== undefined || data.education !== undefined || 
+         data.avatar !== undefined || data.socialLinks !== undefined;
+}, {
+  message: 'At least one profile field must be provided'
+});
+
 // Email verification query schema
 const emailVerificationQuerySchema = z.object({
   token: z.string().min(1, { message: 'Verification token is required' }),
@@ -145,6 +182,7 @@ module.exports = {
   resendVerificationEmailSchema,
   changePasswordSchema,
   updateProfileSchema,
+  profileUpdateSchema,
   emailVerificationQuerySchema,
   passwordResetQuerySchema,
   

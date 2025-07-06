@@ -29,7 +29,7 @@ passport.use(new GoogleStrategy({
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      console.log('Google OAuth Profile:', profile); 
+      // console.log('Google OAuth Profile:', profile); 
       const user = await User.findOrCreateOAuthUser(profile, 'google');
       done(null, user);
     } catch (error) {
@@ -49,7 +49,7 @@ passport.use(new GitHubStrategy({
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
-      console.log('GitHub OAuth Profile:', profile); // Log profile for debugging
+      // console.log('GitHub OAuth Profile:', profile); 
       const user = await User.findOrCreateOAuthUser(profile, 'github');
       done(null, user);
     } catch (error) {

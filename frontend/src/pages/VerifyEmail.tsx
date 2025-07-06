@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, XCircle, Mail, ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import axios from "axios";
+import axiosInstance from "@/api/axiosInstance";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -30,6 +30,7 @@ const VerifyEmail = () => {
 
   const token = searchParams.get('token');
   const email = searchParams.get('email');
+  const urlStatus = searchParams.get('status');
 
   const {
     register,
@@ -43,49 +44,32 @@ const VerifyEmail = () => {
   });
 
   useEffect(() => {
-    if (!token || !email) {
+    if (urlStatus === 'success') {
+      setStatus('success');
+      setMessage('Your email has been successfully verified! You can now sign in to your account.');
+    } else if (urlStatus === 'expired') {
+      setStatus('expired');
+      setMessage('This verification link has expired. Please request a new one.');
+    } else if (urlStatus === 'error') {
       setStatus('error');
-      setMessage('Invalid verification link. Please check your email and try again.');
-      return;
+      setMessage('Verification failed. Please try again.');
+    } else {
+      setStatus('error');
+      setMessage('Invalid verification link. Please use the link sent to your email.');
     }
-
-    const verifyEmail = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/auth/verify-email`, {
-          params: { token, email },
-        });
-
-        if (res.status === 200) {
-          setStatus('success');
-          setMessage('Your email has been successfully verified! You can now sign in to your account.');
-        } else {
-          setStatus('error');
-          setMessage(res.data?.error || 'Verification failed. Please try again.');
-        }
-      } catch (err: any) {
-        const msg = err?.response?.data?.error;
-        if (msg?.toLowerCase().includes("expired")) {
-          setStatus('expired');
-          setMessage('This verification link has expired. Please request a new one.');
-        } else {
-          setStatus('error');
-          setMessage(msg || 'Invalid or expired verification token.');
-        }
-      }
-    };
-
-    verifyEmail();
-  }, [token, email]);
+  }, [urlStatus]);
 
   const onResendSubmit = async (data: ResendEmailFormData) => {
     try {
-      await axios.post(`${API_URL}/auth/resend-verification`, data);
+      console.log('[DEBUG] Resending verification email for:', data.email);
+      await axiosInstance.post(`${API_URL}/auth/resend-verification`, data);
       toast({
         title: "Verification email sent",
         description: "Please check your email for the verification link.",
       });
       setShowResendForm(false);
     } catch (error: any) {
+      console.error('[DEBUG] Resend verification error:', error);
       toast({
         title: "Failed to send",
         description: error?.response?.data?.error || "Something went wrong.",

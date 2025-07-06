@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, CheckCircle, XCircle, Key, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import axios from "axios"; // Import axios
+import axiosInstance from "@/api/axiosInstance";
 
 const API_URL = import.meta.env.VITE_API_URL; // Define API_URL
 
@@ -70,7 +70,7 @@ const ResetPassword = () => {
     const validateToken = async () => {
       try {
         // Validate token with backend
-        const response = await axios.get(`${API_URL}/auth/check-reset-token`, {
+        const response = await axiosInstance.get(`${API_URL}/auth/check-reset-token`, {
           params: { token, email }
         });
         
@@ -113,7 +113,7 @@ const ResetPassword = () => {
   const onSubmit = async (data: ResetPasswordFormData) => {
     try {
       // Implement actual password reset logic
-      const response = await axios.post(`${API_URL}/auth/reset-password`, 
+      const response = await axiosInstance.post(`${API_URL}/auth/reset-password`, 
         { 
           password: data.password,
           confirmPassword: data.confirmPassword // Send confirmPassword as well

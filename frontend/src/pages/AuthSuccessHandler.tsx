@@ -52,7 +52,7 @@ const AuthSuccessHandler = () => {
             description: "OAuth token invalid or missing user data.",
             variant: "destructive",
           });
-          navigate('/login'); // Redirect to login or an error page
+          navigate('/'); // Redirect to home page instead of non-existent login page
         }
       } catch (error) {
         console.error("Error decoding JWT:", error);
@@ -61,7 +61,7 @@ const AuthSuccessHandler = () => {
           description: "Invalid access token received or decoding failed.",
           variant: "destructive",
         });
-        navigate('/login'); // Redirect to login or an error page
+        navigate('/'); // Redirect to home page instead of non-existent login page
       }
     } else {
       toast({
@@ -69,7 +69,7 @@ const AuthSuccessHandler = () => {
         description: "No access token found in redirect.",
         variant: "destructive",
       });
-      navigate('/login'); // Redirect to login or an error page
+      navigate('/'); // Redirect to home page instead of non-existent login page
     }
   }, [searchParams, navigate, setAuth, toast]);
 

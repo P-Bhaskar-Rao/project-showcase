@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import axiosInstance from "@/api/axiosInstance";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -36,7 +36,7 @@ const EmailVerificationModal = ({
   useEffect(() => {
     const checkVerification = async () => {
       try {
-        const res = await axios.get(`${API_URL}/auth/check-verification?email=${encodeURIComponent(email)}`);
+        const res = await axiosInstance.get(`/auth/check-verification?email=${encodeURIComponent(email)}`);
         if (res.data.isVerified) {
           setIsVerified(true);
           toast({
@@ -63,7 +63,7 @@ const EmailVerificationModal = ({
   const handleResendEmail = async () => {
     setIsResending(true);
     try {
-      await axios.post(`${API_URL}/auth/resend-verification`, { email });
+      await axiosInstance.post("/auth/resend-verification", { email });
       toast({
         title: "Verification email resent",
         description: "Please check your inbox again."

@@ -47,7 +47,6 @@ const userSchema = new mongoose.Schema({
   },
   refreshToken: {
     type: String,
-    default: null,
     unique: true,
     sparse: true // Allows multiple null values
   },
@@ -77,7 +76,43 @@ const userSchema = new mongoose.Schema({
   lockUntil: {
     type: Date,
     default: null
-  }
+  },
+  bio: {
+    type: String,
+    trim: true,
+    maxlength: [500, 'Bio cannot exceed 500 characters']
+  },
+  skills: {
+    type: [String],
+    default: [],
+  },
+  education: {
+    type: [
+      {
+        institution: { type: String },
+        degree: { type: String },
+        fieldOfStudy: { type: String },
+        startYear: { type: Number },
+        endYear: { type: Number }
+      }
+    ],
+    default: [],
+  },
+  socialLinks: {
+    github: { type: String, default: null },
+    linkedin: { type: String, default: null },
+    twitter: { type: String, default: null },
+    website: { type: String, default: null }
+  },
+  profileCompleted: {
+    type: Boolean,
+    default: false
+  },
+  favorites: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project',
+    default: []
+  }]
 }, {
   timestamps: true,
   toJSON: {
@@ -222,6 +257,23 @@ userSchema.statics.findOrCreateOAuthUser = async function(profile, provider) {
       if (profile.photos && profile.photos.length > 0) {
         user.avatar = profile.photos[0].value;
       }
+      // Ensure required fields exist for existing users
+      if (!user.skills || user.skills.length === 0) {
+        user.skills = ['Add your skills here'];
+      }
+      if (!user.education || user.education.length === 0) {
+        user.education = [{
+          institution: 'Add your institution',
+          degree: 'Add your degree',
+          fieldOfStudy: 'Add your field of study',
+          startYear: new Date().getFullYear(),
+          endYear: new Date().getFullYear()
+        }];
+      }
+      if (!user.bio) {
+        user.bio = 'Add your bio here';
+      }
+      user.profileCompleted = false;
       await user.save();
       return user;
     }
@@ -236,7 +288,19 @@ userSchema.statics.findOrCreateOAuthUser = async function(profile, provider) {
       oauthId: profile.id,
       oauthProvider: provider,
       isVerified: true,
-      avatar: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : null
+      avatar: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : null,
+      // Add default values for required fields
+      skills: ['Add your skills here'],
+      education: [{
+        institution: 'Add your institution',
+        degree: 'Add your degree',
+        fieldOfStudy: 'Add your field of study',
+        startYear: new Date().getFullYear(),
+        endYear: new Date().getFullYear()
+      }],
+      bio: 'Add your bio here',
+      profileCompleted: false
+      // Do NOT set refreshToken here; it will be omitted if not present
     });
 
     await user.save();
@@ -245,6 +309,30 @@ userSchema.statics.findOrCreateOAuthUser = async function(profile, provider) {
     console.error(`Error in findOrCreateOAuthUser for ${provider}:`, error);
     throw new Error(`OAuth user creation failed: ${error.message}`);
   }
+};
+
+// Instance method to check if profile is complete
+userSchema.methods.isProfileComplete = function() {
+  // Check if profile has meaningful content (not placeholder values)
+  const hasValidBio = this.bio && this.bio !== 'Add your bio here';
+  const hasValidSkills = Array.isArray(this.skills) && 
+    this.skills.length > 0 && 
+    !this.skills.every(skill => skill === 'Add your skills here');
+  const hasValidEducation = Array.isArray(this.education) && 
+    this.education.length > 0 && 
+    !this.education.every(edu => 
+      edu.institution === 'Add your institution' && 
+      edu.degree === 'Add your degree' && 
+      edu.fieldOfStudy === 'Add your field of study'
+    );
+
+  return !!(
+    this.name &&
+    this.avatar &&
+    hasValidBio &&
+    hasValidSkills &&
+    hasValidEducation
+  );
 };
 
 module.exports = mongoose.model('User', userSchema);

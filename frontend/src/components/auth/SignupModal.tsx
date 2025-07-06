@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import axios from "axios";
+import axiosInstance from "@/api/axiosInstance";
 import {
   Dialog,
   DialogContent,
@@ -88,7 +88,7 @@ const SignupModal = ({
 
   const onSubmit = async (data: SignupFormData) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/signup`, data, {
+      const response = await axiosInstance.post(`${API_URL}/auth/signup`, data, {
         withCredentials: true,
       });
 

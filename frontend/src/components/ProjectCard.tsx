@@ -1,15 +1,17 @@
-
-import { Github, ExternalLink, Calendar, User, Heart, Lock, FileText } from "lucide-react";
+import { Github, ExternalLink, Calendar, User, Heart, Lock, FileText, Pencil, Trash, Briefcase, Building2, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useEffect } from "react";
 
 interface Project {
   id: string;
   name: string;
   description: string;
   author: string;
+  authorId: string;
   techStack: string[];
   category: string;
   githubUrl: string;
@@ -17,6 +19,8 @@ interface Project {
   internshipPeriod: string;
   image?: string;
   architectureDiagram?: string;
+  projectType: string;
+  companyName?: string;
 }
 
 interface ProjectCardProps {
@@ -24,10 +28,12 @@ interface ProjectCardProps {
   isLoggedIn: boolean;
   isFavorite: boolean;
   onToggleFavorite: (projectId: string) => void;
-  onAuthorClick: (authorName: string) => void;
+  onAuthorClick: (authorId: string, authorName: string) => void;
   onGithubClick: (e: React.MouseEvent, githubUrl: string) => void;
   onLiveDemoClick: (e: React.MouseEvent, liveUrl: string) => void;
   onArchitectureClick: (e: React.MouseEvent, architectureUrl: string) => void;
+  onEdit?: (project: Project) => void;
+  onDelete?: (project: Project) => void;
 }
 
 const ProjectCard = ({
@@ -38,8 +44,20 @@ const ProjectCard = ({
   onAuthorClick,
   onGithubClick,
   onLiveDemoClick,
-  onArchitectureClick
+  onArchitectureClick,
+  onEdit,
+  onDelete
 }: ProjectCardProps) => {
+  const user = useAuthStore((state) => state.user);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  useEffect(() => {
+    console.log('[DEBUG] ProjectCard user:', user);
+    console.log('[DEBUG] ProjectCard accessToken:', accessToken);
+  }, [user, accessToken]);
+
+  console.log('[DEBUG] ProjectCard user:', user, 'project.authorId:', project.authorId);
+  const isOwner = user && user.id === project.authorId;
+
   const getTechColor = (tech: string) => {
     const colors = {
       "React": "bg-blue-100 text-blue-800",
@@ -64,31 +82,52 @@ const ProjectCard = ({
 
   return (
     <TooltipProvider>
-      <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white border border-gray-200">
+      <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white border border-gray-200 flex flex-col h-full">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors truncate">
                 {project.name}
               </CardTitle>
-              <div className="flex flex-wrap items-center gap-2 mt-2 text-sm text-gray-500">
-                <div className="flex items-center gap-1">
+              {/* Author, Date, Project Type, Company (if internship) */}
+              <div className="space-y-1 mt-2 text-sm text-gray-500">
+                {/* Line 1: User icon + author name */}
+                <div className="flex items-center gap-2 min-w-0">
                   <User className="h-3 w-3 flex-shrink-0" />
-                  <button 
-                    className="hover:text-emerald-600 hover:underline transition-colors truncate"
-                    onClick={() => onAuthorClick(project.author)}
+                  <button
+                    className="hover:text-emerald-600 hover:underline transition-colors flex-1 text-left truncate"
+                    title={`View profile for ${project.author}`}
+                    onClick={() => onAuthorClick(project.authorId, project.author)}
                   >
                     {project.author}
                   </button>
                 </div>
-                <span className="hidden sm:inline">•</span>
-                <div className="flex items-center gap-1">
+                {/* Line 2: Calendar icon + date */}
+                <div className="flex items-center gap-2">
                   <Calendar className="h-3 w-3 flex-shrink-0" />
                   <span className="truncate">{project.internshipPeriod}</span>
                 </div>
+                {/* Line 3: Project type icon + type */}
+                <div className="flex items-center gap-2">
+                  {project.projectType === 'internship' ? (
+                    <Briefcase className="h-3 w-3 flex-shrink-0" />
+                  ) : (
+                    <Star className="h-3 w-3 flex-shrink-0" />
+                  )}
+                  <span className="truncate capitalize">{project.projectType === 'internship' ? 'Internship' : 'Personal Project'}</span>
+                </div>
+                {/* Line 4: Company/Organization (if internship) */}
+                {project.projectType === 'internship' && project.companyName && (
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-3 w-3 flex-shrink-0" />
+                    <span className="truncate">{project.companyName}</span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+              {/* Hide favorite button for now */}
+              {/*
               <button
                 onClick={() => onToggleFavorite(project.id)}
                 className="p-1 hover:bg-gray-100 rounded-full transition-colors"
@@ -100,6 +139,39 @@ const ProjectCard = ({
                   } transition-colors`}
                 />
               </button>
+              */}
+              {isOwner && (
+                <>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="p-1 h-6 w-6 group/edit-btn"
+                        aria-label="Edit Project"
+                        onClick={() => onEdit && onEdit(project)}
+                      >
+                        <Pencil className="h-4 w-4 text-gray-400 group-hover/edit-btn:text-emerald-600 transition-colors" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Edit Project</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="p-1 h-6 w-6 group/delete-btn"
+                        aria-label="Delete Project"
+                        onClick={() => onDelete && onDelete(project)}
+                      >
+                        <Trash className="h-4 w-4 text-gray-400 group-hover/delete-btn:text-red-600 transition-colors" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Delete Project</TooltipContent>
+                  </Tooltip>
+                </>
+              )}
               <Badge variant="secondary" className="text-xs">
                 {project.category}
               </Badge>
@@ -107,27 +179,29 @@ const ProjectCard = ({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
-          <CardDescription className="text-gray-600 leading-relaxed line-clamp-3">
-            {project.description}
-          </CardDescription>
-
-          {/* Tech Stack */}
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tech Stack</p>
-            <div className="flex flex-wrap gap-1">
-              {project.techStack.map((tech) => (
-                <Badge
-                  key={tech}
-                  variant="secondary"
-                  className={`text-xs ${getTechColor(tech)}`}
-                >
-                  {tech}
-                </Badge>
-              ))}
+        <CardContent className="flex flex-col flex-1 space-y-4">
+          <div className="flex-1 flex flex-col space-y-4">
+            <div className="min-h-[56px]">
+              <CardDescription className="text-gray-600 leading-relaxed line-clamp-3">
+                {project.description}
+              </CardDescription>
+            </div>
+            {/* Tech Stack */}
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">TECH STACK</p>
+              <div className="flex flex-wrap gap-1">
+                {project.techStack.map((tech) => (
+                  <Badge
+                    key={tech}
+                    variant="secondary"
+                    className={`text-xs ${getTechColor(tech)}`}
+                  >
+                    {tech}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
-
           {/* Links */}
           <div className={`pt-2 ${hasThreeButtons ? 'space-y-2' : 'flex gap-2'}`}>
             {/* First row - Code button (always present) */}

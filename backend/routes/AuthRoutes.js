@@ -12,7 +12,9 @@ router.post('/resend-verification', validateBody(resendVerificationEmailSchema),
 router.post('/login', validateBody(loginSchema), authController.login);
 router.post('/forgot-password', validateBody(forgotPasswordSchema), authController.forgotPassword);
 
-// NEW ROUTE: Check Password Reset Token Validity
+// NEW ROUTE: Check if email is verified
+router.get('/check-verification', authController.checkEmailVerificationStatus);
+
 router.get('/check-reset-token', validateQuery(passwordResetQuerySchema), authController.checkResetTokenValidity);
 
 router.post('/reset-password', validateBody(resetPasswordSchema), validateQuery(passwordResetQuerySchema), authController.resetPassword);

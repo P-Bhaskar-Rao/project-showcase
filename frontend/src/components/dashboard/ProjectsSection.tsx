@@ -1,8 +1,7 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Code, Heart, Github, ExternalLink, Plus } from "lucide-react";
+import { Code, Github, ExternalLink, Plus } from "lucide-react";
 
 interface Project {
   id: string;
@@ -22,9 +21,11 @@ interface ProjectsSectionProps {
   userProjects: Project[];
   favoriteProjects: Project[];
   onSubmitProject: () => void;
+  favorites: Set<string>;
+  toggleFavorite: (projectId: string) => void;
 }
 
-const ProjectsSection = ({ userProjects, favoriteProjects, onSubmitProject }: ProjectsSectionProps) => {
+const ProjectsSection = ({ userProjects, favoriteProjects, onSubmitProject, favorites, toggleFavorite }: ProjectsSectionProps) => {
   const renderProjectCard = (project: Project, showAuthor: boolean = false) => (
     <div key={project.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-2">
@@ -61,7 +62,7 @@ const ProjectsSection = ({ userProjects, favoriteProjects, onSubmitProject }: Pr
       
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 text-sm text-gray-500">
         <span>{project.internshipPeriod}</span>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
           <a 
             href={project.githubUrl} 
             target="_blank" 
@@ -115,7 +116,8 @@ const ProjectsSection = ({ userProjects, favoriteProjects, onSubmitProject }: Pr
         </CardContent>
       </Card>
 
-      {/* Favorite Projects */}
+      {/* Favorite Projects - Hidden */}
+      {/*
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
@@ -137,6 +139,7 @@ const ProjectsSection = ({ userProjects, favoriteProjects, onSubmitProject }: Pr
           )}
         </CardContent>
       </Card>
+      */}
     </div>
   );
 };

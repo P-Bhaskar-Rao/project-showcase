@@ -2,6 +2,7 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const { generateTokenPair, setRefreshTokenCookie, clearRefreshTokenCookie, verifyRefreshToken } = require('../utils/jwt');
 const { sendEmail, emailTemplates, FRONTEND_URL } = require('../utils/email');
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:5000';
 
 
 exports.signup = async (req, res, next) => {
@@ -22,7 +23,7 @@ exports.signup = async (req, res, next) => {
     await user.save();
 
     // Send verification email
-    const verificationLink = `${FRONTEND_URL}/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
+    const verificationLink = `${SERVER_URL}/api/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(email)}`;
     await sendEmail({
       to: user.email,
       subject: emailTemplates.verification.subject,
@@ -59,7 +60,6 @@ exports.verifyEmail = async (req, res, next) => {
     // Redirect to frontend with success status
     res.redirect(`${FRONTEND_URL}/verify-email?status=success&email=${encodeURIComponent(email)}`);
   } catch (error) {
-    console.error('Email verification error:', error);
     res.redirect(`${FRONTEND_URL}/verify-email?status=error&email=${encodeURIComponent(req.query.email || '')}`);
   }
 };
@@ -83,7 +83,7 @@ exports.resendVerificationEmail = async (req, res, next) => {
     await user.save();
 
     // Send new verification email
-    const verificationLink = `${FRONTEND_URL}/verify-email?token=${newVerificationToken}&email=${encodeURIComponent(user.email)}`;
+    const verificationLink = `${SERVER_URL}/api/auth/verify-email?token=${newVerificationToken}&email=${encodeURIComponent(user.email)}`;
     await sendEmail({
       to: user.email,
       subject: emailTemplates.verification.subject,
@@ -197,7 +197,6 @@ exports.oauthCallbackSuccess = (req, res) => {
     // Using query parameter for simplicity as per prompt, but hash fragment is often preferred.
     res.redirect(`${FRONTEND_URL}/auth-success?token=${accessToken}`);
   } catch (error) {
-    console.error('Error during OAuth callback success:', error);
     res.redirect(`${FRONTEND_URL}/auth-error?message=Failed to process OAuth login.`);
   }
 };
@@ -260,7 +259,8 @@ exports.refresh = async (req, res, next) => {
         email: user.email,
         isVerified: user.isVerified,
         avatar: user.avatar,
-        oauthProvider: user.oauthProvider
+        oauthProvider: user.oauthProvider,
+        createdAt: user.createdAt
       }
     });
   } catch (error) {
@@ -277,8 +277,8 @@ exports.logout = async (req, res, next) => {
       // Find user by refresh token and clear it
       const user = await User.findByRefreshToken(refreshToken);
       if (user) {
-        user.refreshToken = null;
-        await user.save();
+        // Use $unset to remove refreshToken instead of setting to null
+        await User.updateOne({ _id: user._id }, { $unset: { refreshToken: "" } });
       }
     }
 
@@ -294,20 +294,18 @@ exports.logout = async (req, res, next) => {
 
 exports.logoutAllDevices = async (req, res, next) => {
   try {
-    // req.user is populated by authMiddleware
-    const userId = req.user._id;
+    const { userId } = req.params;
 
+    // Find the user by ID
     const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ success: false, error: 'User not found.' });
     }
 
-    user.refreshToken = null; // Clear the refresh token
+    // Invalidate all refresh tokens by updating the user document
+    user.refreshToken = undefined;
     await user.save();
-
-    // Clear refresh token cookie from the current client
-    clearRefreshTokenCookie(res);
 
     res.status(200).json({ success: true, message: 'Logged out from all devices successfully.' });
   } catch (error) {
@@ -315,80 +313,91 @@ exports.logoutAllDevices = async (req, res, next) => {
   }
 };
 
+// Check if email is verified (for polling after signup)
+exports.checkEmailVerificationStatus = async (req, res, next) => {
+  try {
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required.' });
+    }
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found.' });
+    }
+    res.status(200).json({ success: true, isVerified: !!user.isVerified });
+  } catch (error) {
+    next(error);
+  }
+};
 
+// Check if password reset token is valid (for reset password page)
+exports.checkResetTokenValidity = async (req, res, next) => {
+  try {
+    const { email, token } = req.query;
+    if (!email || !token) {
+      return res.status(400).json({ success: false, error: 'Email and token are required.' });
+    }
+    const user = await User.findByPasswordResetToken(email, token);
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired reset token.' });
+    }
+    res.status(200).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Reset password using email and token
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { email, token } = req.query;
+    const { password, confirmPassword } = req.body;
+    if (!email || !token) {
+      return res.status(400).json({ success: false, error: 'Email and token are required.' });
+    }
+    if (!password || !confirmPassword) {
+      return res.status(400).json({ success: false, error: 'Password and confirmPassword are required.' });
+    }
+    if (password !== confirmPassword) {
+      return res.status(400).json({ success: false, error: 'Passwords do not match.' });
+    }
+    const user = await User.findByPasswordResetToken(email, token);
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired reset token.' });
+    }
+    user.password = password;
+    user.clearPasswordResetToken();
+    await user.save();
+    res.status(200).json({ success: true, message: 'Password has been reset successfully.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Forgot password: send reset link
 exports.forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
-
-    const user = await User.findOne({ email });
-
-    // Always send a generic success message to prevent email enumeration attacks
-    if (!user) {
-      return res.status(200).json({ success: true, message: 'If an account with that email exists, a password reset link has been sent.' });
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email is required.' });
     }
-
-    // Generate password reset token
+    const user = await User.findOne({ email });
+    if (!user) {
+      // For security, do not reveal if user does not exist
+      return res.status(200).json({ success: true, message: 'If that email exists, a reset link has been sent.' });
+    }
+    // Generate reset token
     const resetToken = user.generatePasswordResetToken();
     await user.save();
-
-    // Send password reset email
-    const resetLink = `${FRONTEND_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(user.email)}`;
+    // Send reset email
+    const resetLink = `${FRONTEND_URL}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
     await sendEmail({
       to: user.email,
       subject: emailTemplates.passwordReset.subject,
       html: emailTemplates.passwordReset.getHtml(resetLink, user.name),
       text: emailTemplates.passwordReset.getText(resetLink, user.name)
     });
-
-    res.status(200).json({ success: true, message: 'If an account with that email exists, a password reset link has been sent.' });
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-exports.checkResetTokenValidity = async (req, res, next) => {
-  try {
-    const { token, email } = req.query;
-
-    if (!token || !email) {
-      return res.status(400).json({ success: false, error: 'Token and email are required.' });
-    }
-
-    const user = await User.findByPasswordResetToken(email, token);
-
-    if (!user) {
-      return res.status(400).json({ success: false, error: 'Invalid or expired password reset link.' });
-    }
-
-    
-    res.status(200).json({ success: true, message: 'Password reset link is valid.' });
-
-  } catch (error) {
-    console.error('Error checking reset token validity:', error);
-   
-    res.status(500).json({ success: false, error: 'An unexpected error occurred while validating the link.' });
-  }
-};
-
-
-exports.resetPassword = async (req, res, next) => {
-  try {
-    const { token, email } = req.query;
-    const { password } = req.body; 
-
-    const user = await User.findByPasswordResetToken(email, token);
-
-    if (!user) {
-      return res.status(400).json({ success: false, error: 'Invalid or expired password reset link.' });
-    }
-
-    // Set new password (pre-save hook will hash it)
-    user.password = password;
-    user.clearPasswordResetToken(); // Clear token after successful reset
-    await user.save();
-
-    res.status(200).json({ success: true, message: 'Password has been reset successfully.' });
+    res.status(200).json({ success: true, message: 'If that email exists, a reset link has been sent.' });
   } catch (error) {
     next(error);
   }

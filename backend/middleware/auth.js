@@ -1,6 +1,7 @@
 // middleware/auth.middleware.js
 const { verifyAccessToken, extractTokenFromHeader } = require('../utils/jwt');
 const User = require('../models/User');
+const mongoose = require('mongoose');
 
 /**
  * Middleware to protect routes by verifying JWT access token.
@@ -19,10 +20,24 @@ const authMiddleware = async (req, res, next) => {
     }
 
     // Verify the access token
-    const decoded = verifyAccessToken(accessToken);
+    let decoded;
+    try {
+      decoded = verifyAccessToken(accessToken);
+    } catch (err) {
+      return res.status(401).json({ success: false, error: 'Unauthorized: Invalid token' });
+    }
 
     // Find the user by ID from the decoded token
-    const user = await User.findById(decoded.userId);
+    let user;
+    try {
+      user = await User.findById(decoded.userId);
+      if (!user && mongoose.isValidObjectId(decoded.userId)) {
+        // Try with ObjectId conversion if not found
+        user = await User.findById(new mongoose.Types.ObjectId(decoded.userId));
+      }
+    } catch (err) {
+      // Error handling for user lookup
+    }
 
     if (!user) {
       return res.status(401).json({ success: false, error: 'Unauthorized: User not found' });
@@ -30,17 +45,10 @@ const authMiddleware = async (req, res, next) => {
 
     // Attach user information to the request object
     req.user = user;
+    req.user._id = user._id.toString(); // Always set as string
     next();
   } catch (error) {
-    // Handle specific JWT errors
-    if (error.message === 'Access token has expired') {
-      return res.status(401).json({ success: false, error: 'Unauthorized: Access token expired', code: 'TOKEN_EXPIRED' });
-    }
-    if (error.message === 'Invalid access token') {
-      return res.status(401).json({ success: false, error: 'Unauthorized: Invalid access token', code: 'INVALID_TOKEN' });
-    }
-    console.error('Auth middleware error:', error);
-    return res.status(500).json({ success: false, error: 'Authentication failed', details: error.message });
+    return res.status(401).json({ success: false, error: 'Unauthorized: Invalid or expired token' });
   }
 };
 

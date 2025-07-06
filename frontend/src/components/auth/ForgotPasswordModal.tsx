@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Mail, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import axios from "axios"; // Import axios
+import axiosInstance from "@/api/axiosInstance";
 
 const API_URL = import.meta.env.VITE_API_URL; // Define API_URL
 
@@ -42,7 +42,7 @@ const ForgotPasswordModal = ({ isOpen, onClose, onBackToLogin }: ForgotPasswordM
   const onSubmit = async (data: ForgotPasswordFormData) => {
     try {
       // Implement actual forgot password logic
-      const response = await axios.post(`${API_URL}/auth/forgot-password`, { email: data.email });
+      const response = await axiosInstance.post(`${API_URL}/auth/forgot-password`, { email: data.email });
       
       if (response.data.success) {
         setIsEmailSent(true);

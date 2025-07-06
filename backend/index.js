@@ -11,6 +11,7 @@ const passport = require("passport");
 const session = require("express-session");
 const authRoutes = require("./routes/AuthRoutes");
 const projectRoutes = require("./routes/ProjectRoutes");
+const profileRoutes = require("./routes/ProfileRoutes");
 
 const errorHandler = require("./middleware/errorHandler");
 
@@ -26,7 +27,7 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
     credentials: true, 
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -34,13 +35,13 @@ app.use(
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 1000, // limit each IP to 100 requests per windowMs
   message: "Too many requests from this IP, please try again after 15 minutes.",
 });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 15, 
+  max: 50, 
   message: "Too many authentication attempts, please try again later.",
 });
 
@@ -79,6 +80,7 @@ app.use("/api/auth/forgot-password", authLimiter);
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes); // Example protected route
+app.use("/api/profile", profileRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
