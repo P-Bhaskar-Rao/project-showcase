@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface Project {
   id: string;
@@ -50,6 +51,7 @@ const ProjectCard = ({
 }: ProjectCardProps) => {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
+  const navigate = useNavigate();
   useEffect(() => {
     console.log('[DEBUG] ProjectCard user:', user);
     console.log('[DEBUG] ProjectCard accessToken:', accessToken);
@@ -86,7 +88,11 @@ const ProjectCard = ({
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors truncate">
+              <CardTitle
+                className="text-lg font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors truncate cursor-pointer"
+                onClick={() => navigate(`/project/${project.id}`)}
+                title={project.name}
+              >
                 {project.name}
               </CardTitle>
               {/* Author, Date, Project Type, Company (if internship) */}

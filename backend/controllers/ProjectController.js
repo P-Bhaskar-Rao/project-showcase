@@ -122,3 +122,16 @@ exports.deleteProject = async (req, res, next) => {
     next(error);
   }
 };
+
+// Get a single project by ID
+exports.getProjectById = async (req, res, next) => {
+  try {
+    const project = await Project.findById(req.params.id);
+    if (!project) {
+      return res.status(404).json({ success: false, error: 'Project not found.' });
+    }
+    res.status(200).json({ success: true, project });
+  } catch (error) {
+    next(error);
+  }
+};

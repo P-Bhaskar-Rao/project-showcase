@@ -12,5 +12,7 @@ router.post('/', authMiddleware, projectController.createProject);
 router.patch('/:id', authMiddleware, projectController.updateProject);
 // Delete a project by ID (auth required)
 router.delete('/:id', authMiddleware, projectController.deleteProject);
+// Get a single project by ID
+router.get('/:id', projectController.getProjectById);
 
 module.exports = router;
