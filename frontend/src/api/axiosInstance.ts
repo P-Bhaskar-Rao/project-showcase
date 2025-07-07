@@ -41,7 +41,7 @@ axiosInstance.interceptors.response.use(
         return axiosInstance(originalRequest);
       } else {
         useAuthStore.getState().clearAuth();
-        window.location.href = '/login';
+        window.location.href = '/';
       }
     }
     return Promise.reject(error);
@@ -53,8 +53,8 @@ axiosInstance.interceptors.request.use(
   (config) => {
     const accessToken = useAuthStore.getState().accessToken;
     if (accessToken) {
-      config.headers = config.headers || {};
-      config.headers['Authorization'] = `Bearer ${accessToken}`;
+      if (!config.headers) config.headers = {} as Record<string, string>;
+      (config.headers as Record<string, string>)["Authorization"] = `Bearer ${accessToken}`;
     }
     return config;
   },

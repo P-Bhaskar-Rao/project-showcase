@@ -9,13 +9,35 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { X, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useNavigate } from "react-router-dom";
+
+// Define a Project type for props
+interface Project {
+  id?: string;
+  name: string;
+  description: string;
+  author: string;
+  category: string;
+  githubUrl: string;
+  liveUrl?: string;
+  projectType: string;
+  companyName?: string;
+  internshipStartDate?: string;
+  internshipEndDate?: string;
+  projectStartDate?: string;
+  projectEndDate?: string;
+  architectureDiagram?: string;
+  techStack: string[];
+  authorId?: string;
+  internshipPeriod?: string;
+}
 
 interface ProjectSubmissionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (project: any) => void;
-  initialData?: any;
-  onUpdate?: (project: any) => void;
+  onSubmit: (project: Project) => void;
+  initialData?: Project;
+  onUpdate?: (project: Project) => void;
 }
 
 const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpdate }: ProjectSubmissionModalProps) => {
@@ -39,6 +61,7 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const user = useAuthStore((state) => state.user);
+  const navigate = useNavigate();
 
   const categories = [
     "Web App",
@@ -194,6 +217,8 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
         title: initialData ? "Project Updated!" : "Project Submitted!",
         description: initialData ? "Your project has been updated." : "Your project has been successfully submitted and is now visible.",
       });
+      // Navigate to projects page after successful submission
+      navigate("/projects");
       // Reset form
       setFormData({
         name: "",
@@ -358,6 +383,7 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
               <Label htmlFor="category">Category *</Label>
               <select
                 id="category"
+                title="Project category"
                 value={formData.category}
                 onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
                 className="w-full px-3 py-2 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
@@ -380,7 +406,7 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
                   placeholder="Add a technology (e.g., React, Node.js)"
                   onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTechStack())}
                 />
-                <Button type="button" onClick={addTechStack} size="icon">
+                <Button type="button" onClick={addTechStack} size="icon" title="Add technology">
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
@@ -392,6 +418,8 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
                       type="button"
                       onClick={() => removeTechStack(tech)}
                       className="ml-1 hover:text-red-500"
+                      aria-label={`Remove ${tech}`}
+                      title={`Remove ${tech}`}
                     >
                       <X className="h-3 w-3" />
                     </button>

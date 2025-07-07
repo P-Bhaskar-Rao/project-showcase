@@ -126,7 +126,9 @@ const Profile = () => {
     };
 
     loadProfile();
-  }, [user, navigate, fetchProfile, toast]);
+    // Only run once when the component mounts
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (profile) {
@@ -157,13 +159,22 @@ const Profile = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      if (!formData.name.trim()) {
+        toast({
+          title: "Error",
+          description: "Name is required.",
+          variant: "destructive",
+        });
+        setIsSaving(false);
+        return;
+      }
       const success = await updateProfile({
         name: formData.name,
         bio: formData.bio,
         skills: formData.skills.filter(skill => skill.trim() !== ''),
-        education: formData.education.filter(edu => 
-          edu.institution.trim() !== '' && 
-          edu.degree.trim() !== '' && 
+        education: formData.education.filter(edu =>
+          edu.institution.trim() !== '' &&
+          edu.degree.trim() !== '' &&
           edu.fieldOfStudy.trim() !== ''
         ),
         avatar: formData.avatar,
@@ -333,12 +344,11 @@ const Profile = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Full Name</label>
-                  <input
-                    type="text"
+                  <Input
+                    id="name"
                     value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    placeholder="Enter your full name"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-colors outline-none"
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    required
                   />
                 </div>
                 <div className="space-y-2">

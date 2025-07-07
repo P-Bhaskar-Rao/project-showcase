@@ -84,6 +84,19 @@ export const useAuthStore = create<AuthState>()(
           });
           set({ profile: res.data.user });
           set({ profileCompleteness: res.data.isProfileComplete });
+
+          // Sync user with profile for name and avatar
+          if (get().user) {
+            const updatedUser = { ...get().user! };
+            if (res.data.user.name) {
+              updatedUser.name = res.data.user.name;
+            }
+            if (res.data.user.avatar !== undefined) {
+              updatedUser.avatar = res.data.user.avatar;
+            }
+            set({ user: updatedUser });
+          }
+          
           console.log('[Zustand] fetchProfile success', res.data.user);
         } catch (e) {
           console.log('[Zustand] fetchProfile error', e);

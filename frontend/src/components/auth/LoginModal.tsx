@@ -57,7 +57,7 @@ const LoginModal = ({
       if (response.data.success) {
         const { user, accessToken } = response.data;
 
-        // ✅ Store user and token in Zustand
+       
         setAuth(user, accessToken);
 
         toast({

@@ -255,7 +255,9 @@ userSchema.statics.findOrCreateOAuthUser = async function(profile, provider) {
       user.oauthProvider = provider;
       user.isVerified = true;
       if (profile.photos && profile.photos.length > 0) {
-        user.avatar = profile.photos[0].value;
+        if (!user.avatar) {
+          user.avatar = profile.photos[0].value;
+        }
       }
       if (!user.skills) {
         user.skills = [];

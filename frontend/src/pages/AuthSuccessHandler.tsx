@@ -19,6 +19,7 @@ const AuthSuccessHandler = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const fetchProfile = useAuthStore((state) => state.fetchProfile);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -40,11 +41,14 @@ const AuthSuccessHandler = () => {
           };
 
           setAuth(actualUser, accessToken); // Update Zustand store with actual data
-          toast({
-            title: "Login Successful!",
-            description: `Welcome, ${actualUser.name}!`,
+          // Fetch latest profile to update avatar and other info
+          fetchProfile().finally(() => {
+            toast({
+              title: "Login Successful!",
+              description: `Welcome, ${actualUser.name}!`,
+            });
+            navigate('/'); // Redirect to home page
           });
-          navigate('/'); // Redirect to home page
         } else {
           console.error("Decoded token missing required user data:", decodedToken);
           toast({
@@ -71,7 +75,7 @@ const AuthSuccessHandler = () => {
       });
       navigate('/'); // Redirect to home page instead of non-existent login page
     }
-  }, [searchParams, navigate, setAuth, toast]);
+  }, [searchParams, navigate, setAuth, fetchProfile, toast]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-50">

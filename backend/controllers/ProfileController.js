@@ -108,33 +108,8 @@ exports.checkProfileCompleteness = async (req, res, next) => {
 // Helper function to get missing fields
 function getMissingFields(user) {
   const missingFields = [];
-  if (!user.avatar) missingFields.push('avatar');
-  // Check bio - must not be empty
-  if (!user.bio || user.bio.trim() === '') missingFields.push('bio');
-  // Check skills - must not be empty
-  if (!user.skills || user.skills.length === 0) {
-    missingFields.push('skills');
-  }
-  // Check education - must not be empty
-  if (!user.education || user.education.length === 0) {
-    missingFields.push('education');
-  }
-  // Check education subfields (only if education exists)
-  if (user.education && user.education.length > 0) {
-    user.education.forEach((edu, index) => {
-      if (!edu.institution || edu.institution.trim() === '') {
-        missingFields.push(`education[${index}].institution`);
-      }
-      if (!edu.degree || edu.degree.trim() === '') {
-        missingFields.push(`education[${index}].degree`);
-      }
-      if (!edu.fieldOfStudy || edu.fieldOfStudy.trim() === '') {
-        missingFields.push(`education[${index}].fieldOfStudy`);
-      }
-      if (!edu.startYear) missingFields.push(`education[${index}].startYear`);
-      if (!edu.endYear) missingFields.push(`education[${index}].endYear`);
-    });
-  }
+  if (!user.name || user.name.trim() === '') missingFields.push('name');
+  // Optionally check for avatar, etc. if you want, but only name is required now
   return missingFields;
 }
 
