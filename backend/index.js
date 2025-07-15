@@ -21,6 +21,13 @@ const app = express();
 
 // Security middleware
 app.use(helmet());
+const path = require("path");
+
+app.use(
+  "/googlec0b71f11575d608b.html",
+  express.static(path.join(__dirname, "public"))
+);
+
 
 // CORS configuration
 const allowedOrigins = [
