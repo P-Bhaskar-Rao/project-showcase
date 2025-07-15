@@ -24,10 +24,8 @@ const app = express();
 app.use(helmet());
 
 
-app.use(
-  "/googlec0b71f11575d608b.html",
-  express.static(path.join(__dirname, "public"))
-);
+app.use(express.static(path.join(__dirname, "public")));
+
 
 
 // CORS configuration
