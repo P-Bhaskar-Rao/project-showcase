@@ -72,23 +72,25 @@ const ProjectGrid = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {projects.map((project) => (
-        <ProjectCard
-          key={project.id}
-          project={project}
-          isLoggedIn={isLoggedIn}
-          isFavorite={false} // Hide favorite state
-          onToggleFavorite={() => {}} // Disable favorite toggle
-          onAuthorClick={() => onAuthorClick(project.authorId, project.author)}
-          onGithubClick={onGithubClick}
-          onLiveDemoClick={onLiveDemoClick}
-          onArchitectureClick={onArchitectureClick}
-          onRequireLogin={onRequireLogin}
-          onEdit={onEditProject}
-          onDelete={onDeleteProject}
-        />
-      ))}
+    <div className="w-full">
+      <div className="mx-auto max-w-xl md:max-w-none grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {projects.map((project) => (
+          <ProjectCard
+            key={project.id}
+            project={project}
+            isLoggedIn={isLoggedIn}
+            isFavorite={false} // Hide favorite state
+            onToggleFavorite={() => {}} // Disable favorite toggle
+            onAuthorClick={() => onAuthorClick(project.authorId, project.author)}
+            onGithubClick={onGithubClick}
+            onLiveDemoClick={onLiveDemoClick}
+            onArchitectureClick={onArchitectureClick}
+            onRequireLogin={onRequireLogin}
+            onEdit={onEditProject}
+            onDelete={onDeleteProject}
+          />
+        ))}
+      </div>
     </div>
   );
 };
