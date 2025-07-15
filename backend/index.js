@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
 const cookieParser = require("cookie-parser");
+const path=require('path')
 const rateLimit = require("express-rate-limit");
 const dotenv = require("dotenv");
 dotenv.config();
