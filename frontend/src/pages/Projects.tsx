@@ -319,8 +319,7 @@ const Projects = () => {
         onAuthModalOpen={openAuthModal}
         onSubmitProject={handleSubmitProject}
       />
-
-      <main className={`flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${projects.length === 0 ? 'flex items-center justify-center' : ''}`}>
+      <main className="flex-1 w-full max-w-full px-4 mx-auto sm:max-w-3xl md:max-w-5xl lg:max-w-7xl">
         {projects.length > 0 && (
           <SearchFilters
             searchTerm={searchTerm}
@@ -361,7 +360,6 @@ const Projects = () => {
               <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
             )}
       </main>
-
       <footer className="bg-white border-t border-gray-200 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
