@@ -78,10 +78,8 @@ const LoginModal = ({
   };
 
   const handleSocialAuth = (provider: "Google" | "GitHub") => {
-    // Corrected: Use API_URL directly, then append '/auth'
-    // If API_URL is http://localhost:5000/api, then this becomes http://localhost:5000/api/auth
     const authBaseUrl = API_URL; 
-    console.log(`Initiating OAuth from LoginModal with full URL: ${authBaseUrl}/auth/${provider.toLowerCase()}`); 
+     
     window.location.href = provider === "Google" ? `${authBaseUrl}/auth/google` : `${authBaseUrl}/auth/github`;
   };
 

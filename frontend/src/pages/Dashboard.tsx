@@ -101,9 +101,8 @@ const Dashboard = () => {
       return;
     }
     // Fetch dashboard stats
-    console.log('[Dashboard] Fetching /profile/dashboard-stats');
+    
     axiosInstance.get("/profile/dashboard-stats").then(res => {
-      console.log('[Dashboard] /profile/dashboard-stats response:', res.data);
       if (res.data.success) setStats(res.data.stats);
     });
     // Fetch users I engaged with
@@ -283,151 +282,151 @@ const Dashboard = () => {
 
 
   // Project Carousel Component
-  const ProjectCarousel = ({ projects }: { projects: Project[] }) => {
-    // Responsive cards per slide: 1 on small, 2 on medium, 3 on large
-    const getCardsPerSlide = () => {
-      if (typeof window !== 'undefined') {
-        if (window.innerWidth >= 1024) return 3; // lg
-        if (window.innerWidth >= 640) return 2;  // sm
-        return 1; // xs
-      }
-      return 3; // default
-    };
+  // const ProjectCarousel = ({ projects }: { projects: Project[] }) => {
+  //   // Responsive cards per slide: 1 on small, 2 on medium, 3 on large
+  //   const getCardsPerSlide = () => {
+  //     if (typeof window !== 'undefined') {
+  //       if (window.innerWidth >= 1024) return 3; // lg
+  //       if (window.innerWidth >= 640) return 2;  // sm
+  //       return 1; // xs
+  //     }
+  //     return 3; // default
+  //   };
 
-    const [cardsPerSlide, setCardsPerSlide] = useState(getCardsPerSlide());
+  //   const [cardsPerSlide, setCardsPerSlide] = useState(getCardsPerSlide());
 
-    // Reset carousel to first slide when projects change (i.e., page changes)
-    useEffect(() => {
-      setCurrentProjectSlide(0);
-    }, [projects]);
+  //   // Reset carousel to first slide when projects change (i.e., page changes)
+  //   useEffect(() => {
+  //     setCurrentProjectSlide(0);
+  //   }, [projects]);
 
-    useEffect(() => {
-      const handleResize = () => {
-        setCardsPerSlide(getCardsPerSlide());
-      };
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-    }, []);
+  //   useEffect(() => {
+  //     const handleResize = () => {
+  //       setCardsPerSlide(getCardsPerSlide());
+  //     };
+  //     window.addEventListener('resize', handleResize);
+  //     return () => window.removeEventListener('resize', handleResize);
+  //   }, []);
 
-    // Only use the current page's projects for slides
-    const maxSlides = Math.max(1, Math.ceil(projects.length / cardsPerSlide));
+  //   // Only use the current page's projects for slides
+  //   const maxSlides = Math.max(1, Math.ceil(projects.length / cardsPerSlide));
 
-    useEffect(() => {
-      if (currentProjectSlide >= maxSlides) {
-        setCurrentProjectSlide(0);
-      }
-    }, [maxSlides]);
+  //   useEffect(() => {
+  //     if (currentProjectSlide >= maxSlides) {
+  //       setCurrentProjectSlide(0);
+  //     }
+  //   }, [maxSlides]);
 
-    if (projects.length === 0) {
-      return (
-        <div className="text-center py-12">
-          <p className="text-gray-500 mb-4">No projects yet</p>
-          <button
-            onClick={() => setIsSubmissionModalOpen(true)}
-            className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
-          >
-            Submit your first project
-          </button>
-        </div>
-      );
-    }
+  //   if (projects.length === 0) {
+  //     return (
+  //       <div className="text-center py-12">
+  //         <p className="text-gray-500 mb-4">No projects yet</p>
+  //         <button
+  //           onClick={() => setIsSubmissionModalOpen(true)}
+  //           className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors"
+  //         >
+  //           Submit your first project
+  //         </button>
+  //       </div>
+  //     );
+  //   }
 
-    // Hide arrows/indicators if only one slide
-    const showNavigation = maxSlides > 1;
+  //   // Hide arrows/indicators if only one slide
+  //   const showNavigation = maxSlides > 1;
 
-    return (
-      <div className="relative overflow-hidden min-h-[340px]">
-        {showNavigation && (
-          <>
-            <button
-              onClick={prevProjectSlide}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
-              aria-label="Previous projects"
-            >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <button
-              onClick={nextProjectSlide}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
-              aria-label="Next projects"
-            >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </>
-        )}
-        <div className="overflow-hidden">
-          <div
-            className="flex transition-transform duration-500 ease-in-out"
-            style={{
-              width: `${maxSlides * 100}%`,
-              transform: `translateX(-${currentProjectSlide * 100}%)`,
-            }}
-          >
-            {Array.from({ length: maxSlides }, (_, slideIndex) => {
-              const startIndex = slideIndex * cardsPerSlide;
-              const endIndex = Math.min(startIndex + cardsPerSlide, projects.length);
-              const slideProjects = projects.slice(startIndex, endIndex);
-              return (
-                <div
-                  key={slideIndex}
-                  className="flex gap-4 sm:gap-6 w-full"
-                  style={{ width: '100%' }}
-                >
-                  {slideProjects.map((project) => (
-                    <div
-                      key={project.id}
-                      className="flex-1 min-w-0 flex-shrink-0"
-                    >
-                      <ProjectCard
-                        project={project}
-                        isLoggedIn={isLoggedIn}
-                        isFavorite={false}
-                        onToggleFavorite={() => {}}
-                        onAuthorClick={handleAuthorClick}
-                        onGithubClick={handleGithubClick}
-                        onLiveDemoClick={handleLiveDemoClick}
-                        onArchitectureClick={handleArchitectureClick}
-                        onRequireLogin={() => {
-                          toast.error("Authentication Required: Please log in to perform this action.");
-                        }}
-                        onEdit={() => {}}
-                        onDelete={() => {}}
-                      />
-                    </div>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        {showNavigation && (
-          <div className="flex justify-center mt-6 space-x-2">
-            {Array.from({ length: maxSlides }, (_, index) => (
-              <button
-                key={index}
-                onClick={() => goToProjectSlide(index)}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  index === currentProjectSlide
-                    ? 'bg-emerald-600'
-                    : 'bg-gray-300 hover:bg-gray-400'
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
-        )}
-        {showNavigation && (
-          <div className="text-center mt-4 text-sm text-gray-500">
-            {currentProjectSlide + 1} of {maxSlides}
-          </div>
-        )}
-      </div>
-    );
-  };
+  //   return (
+  //     <div className="relative overflow-hidden min-h-[340px]">
+  //       {showNavigation && (
+  //         <>
+  //           <button
+  //             onClick={prevProjectSlide}
+  //             className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+  //             aria-label="Previous projects"
+  //           >
+  //             <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  //               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+  //             </svg>
+  //           </button>
+  //           <button
+  //             onClick={nextProjectSlide}
+  //             className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-8 h-8 sm:w-10 sm:h-10 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+  //             aria-label="Next projects"
+  //           >
+  //             <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  //               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+  //             </svg>
+  //           </button>
+  //         </>
+  //       )}
+  //       <div className="overflow-hidden">
+  //         <div
+  //           className="flex transition-transform duration-500 ease-in-out"
+  //           style={{
+  //             width: `${maxSlides * 100}%`,
+  //             transform: `translateX(-${currentProjectSlide * 100}%)`,
+  //           }}
+  //         >
+  //           {Array.from({ length: maxSlides }, (_, slideIndex) => {
+  //             const startIndex = slideIndex * cardsPerSlide;
+  //             const endIndex = Math.min(startIndex + cardsPerSlide, projects.length);
+  //             const slideProjects = projects.slice(startIndex, endIndex);
+  //             return (
+  //               <div
+  //                 key={slideIndex}
+  //                 className="flex gap-4 sm:gap-6 w-full"
+  //                 style={{ width: '100%' }}
+  //               >
+  //                 {slideProjects.map((project) => (
+  //                   <div
+  //                     key={project.id}
+  //                     className="flex-1 min-w-0 flex-shrink-0"
+  //                   >
+  //                     <ProjectCard
+  //                       project={project}
+  //                       isLoggedIn={isLoggedIn}
+  //                       isFavorite={false}
+  //                       onToggleFavorite={() => {}}
+  //                       onAuthorClick={handleAuthorClick}
+  //                       onGithubClick={handleGithubClick}
+  //                       onLiveDemoClick={handleLiveDemoClick}
+  //                       onArchitectureClick={handleArchitectureClick}
+  //                       onRequireLogin={() => {
+  //                         toast.error("Authentication Required: Please log in to perform this action.");
+  //                       }}
+  //                       onEdit={() => {}}
+  //                       onDelete={() => {}}
+  //                     />
+  //                   </div>
+  //                 ))}
+  //               </div>
+  //             );
+  //           })}
+  //         </div>
+  //       </div>
+  //       {showNavigation && (
+  //         <div className="flex justify-center mt-6 space-x-2">
+  //           {Array.from({ length: maxSlides }, (_, index) => (
+  //             <button
+  //               key={index}
+  //               onClick={() => goToProjectSlide(index)}
+  //               className={`w-2 h-2 rounded-full transition-colors ${
+  //                 index === currentProjectSlide
+  //                   ? 'bg-emerald-600'
+  //                   : 'bg-gray-300 hover:bg-gray-400'
+  //               }`}
+  //               aria-label={`Go to slide ${index + 1}`}
+  //             />
+  //           ))}
+  //         </div>
+  //       )}
+  //       {showNavigation && (
+  //         <div className="text-center mt-4 text-sm text-gray-500">
+  //           {currentProjectSlide + 1} of {maxSlides}
+  //         </div>
+  //       )}
+  //     </div>
+  //   );
+  // };
 
   // Engagement Card Component
   const EngagementCard = ({ engagement, isEngagedBy }: { engagement: Engagement; isEngagedBy: boolean }) => {

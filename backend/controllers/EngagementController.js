@@ -64,7 +64,7 @@ exports.getUsersWhoEngagedWithMe = async (req, res) => {
 // Get dashboard stats for the current user
 exports.getDashboardStats = async (req, res) => {
   try {
-    console.log('[getDashboardStats] Called for user:', req.user && req.user._id);
+    
     const userId = req.user._id;
     const myProjectsCount = await Project.countDocuments({ authorId: userId });
     const engagedWithCount = await Engagement.countDocuments({ fromUser: userId });

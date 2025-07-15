@@ -201,7 +201,7 @@ const Index = () => {
   };
 
   const handleProjectSubmission = async (newProject: Project) => {
-    console.log('[DEBUG] Submitting project payload:', newProject);
+    
     let triedRefresh = false;
     let tokenToUse = accessToken;
     while (true) {

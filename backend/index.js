@@ -23,9 +23,22 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL || "http://localhost:3000",
+  "https://projectify-punnapareddy-bhaskar-raos-projects.vercel.app",
+  "https://projectify-git-main-punnapareddy-bhaskar-raos-projects.vercel.app"
+];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'), false);
+    },
     credentials: true, 
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -123,12 +136,12 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
-      console.log(
-        `Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:3000"}`
-      );
-      console.log(
-        `Server URL: ${process.env.SERVER_URL || "http://localhost:5000"}`
-      ); 
+      // console.log(
+      //   `Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:3000"}`
+      // );
+      // console.log(
+      //   `Server URL: ${process.env.SERVER_URL || "http://localhost:5000"}`
+      // ); 
     });
   } catch (error) {
     console.error("Failed to start server:", error);

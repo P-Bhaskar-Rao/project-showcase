@@ -64,8 +64,7 @@ const App = () => {
   }
 
   const handleSubmitProject = () => {
-    // This will be handled by the individual pages
-    console.log("Project submission triggered");
+
   };
   return (
     <QueryClientProvider client={queryClient}>

@@ -223,7 +223,7 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
     setIsSubmitting(true);
     
     try {
-      console.log('[DEBUG] Current user:', user);
+      
       const newProject = {
         id: initialData?.id || Date.now().toString(),
         ...formData,

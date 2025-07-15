@@ -178,7 +178,7 @@ const Projects = () => {
   };
 
   const handleProjectSubmission = async (newProject: Project) => {
-    console.log('[DEBUG] Submitting project payload:', newProject);
+    
     let triedRefresh = false;
     let tokenToUse = accessToken;
     while (true) {
@@ -304,8 +304,7 @@ const Projects = () => {
       return aFav ? -1 : 1;
     });
   }
-  console.log('[DEBUG] favorites:', Array.from(favorites));
-  console.log('[DEBUG] sortedProjects:', sortedProjects.map(p => ({ id: p.id, name: p.name })));
+
 
   const isFiltered =
     searchTerm.trim() !== "" ||

@@ -61,7 +61,7 @@ const VerifyEmail = () => {
 
   const onResendSubmit = async (data: ResendEmailFormData) => {
     try {
-      console.log('[DEBUG] Resending verification email for:', data.email);
+     
       await axiosInstance.post(`${API_URL}/auth/resend-verification`, data);
       toast({
         title: "Verification email sent",
