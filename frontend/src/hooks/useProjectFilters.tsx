@@ -1,17 +1,5 @@
 import { useState, useMemo } from "react";
-
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  author: string;
-  techStack: string[];
-  category: string;
-  githubUrl: string;
-  liveUrl?: string;
-  internshipPeriod: string;
-  image?: string;
-}
+import { Project } from "../types/Project";
 
 export const useProjectFilters = (projects: Project[]) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,7 +8,7 @@ export const useProjectFilters = (projects: Project[]) => {
   const [sortBy, setSortBy] = useState("recent");
 
   const filteredProjects = useMemo(() => {
-    let filtered = projects.filter(project => {
+    const filtered = projects.filter(project => {
       const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            project.author.toLowerCase().includes(searchTerm.toLowerCase()) ||

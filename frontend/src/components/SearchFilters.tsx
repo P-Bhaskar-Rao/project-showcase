@@ -1,9 +1,8 @@
-
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const categories = ["All", "Web App", "Mobile App", "AI/ML", "Blockchain", "IoT"];
+const categories = ["All Categories", "Web App", "Mobile App", "AI/ML", "Blockchain", "IoT"];
 
 interface SearchFiltersProps {
   searchTerm: string;
@@ -33,60 +32,77 @@ const SearchFilters = ({
   filteredCount
 }: SearchFiltersProps) => {
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Search */}
-        <div className="relative sm:col-span-2">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+    <div className="bg-white rounded-lg p-3 mb-4 border border-gray-200 w-full">
+      <style>{`
+        .no-focus-outline input:focus,
+        .no-focus-outline button:focus,
+        .no-focus-outline [data-radix-focus-guard]:focus {
+          outline: none !important;
+          box-shadow: none !important;
+        }
+        .no-focus-outline *:focus {
+          outline: none !important;
+          box-shadow: none !important;
+        }
+      `}</style>
+      <div className="flex gap-3 items-center overflow-x-auto no-focus-outline">
+        {/* Search - takes more space */}
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search projects, authors, or technologies..."
-            className="pl-10 h-12"
+            placeholder="Search projects..."
+            className="pl-9 h-9 text-sm rounded-md border-gray-200 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-100 focus:outline-none outline-none shadow-none focus:shadow-none transition-colors"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        {/* Category Filter */}
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="h-12">
-            <SelectValue placeholder="Category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map(category => (
-              <SelectItem key={category} value={category}>{category}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Category */}
+        <div className="flex-shrink-0 w-28">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="h-9 text-sm rounded-md border-gray-200 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100 focus:outline-none outline-none shadow-none focus:shadow-none transition-colors">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map(category => (
+                <SelectItem key={category} value={category}>
+                  {category}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        {/* Tech Filter */}
-        <Select value={selectedTech} onValueChange={setSelectedTech}>
-          <SelectTrigger className="h-12">
-            <SelectValue placeholder="Technology" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="All">All Technologies</SelectItem>
-            {techOptions.map(tech => (
-              <SelectItem key={tech} value={tech}>{tech}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+        {/* Technology */}
+        <div className="flex-shrink-0 w-28">
+          <Select value={selectedTech} onValueChange={setSelectedTech}>
+            <SelectTrigger className="h-9 text-sm rounded-md border-gray-200 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100 focus:outline-none outline-none shadow-none focus:shadow-none transition-colors">
+              <SelectValue placeholder="Tech" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Tech</SelectItem>
+              {techOptions && techOptions.map(tech => (
+                <SelectItem key={tech} value={tech}>
+                  {tech}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-      {/* Sort Options */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-4 pt-4 border-t border-gray-100 gap-4">
-        <p className="text-sm text-gray-600">
-          Showing {filteredCount} of {totalProjects} projects
-        </p>
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-full sm:w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="recent">Most Recent</SelectItem>
-            <SelectItem value="name">A–Z</SelectItem>
-            <SelectItem value="author">By Author</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Sort */}
+        <div className="flex-shrink-0 w-28">
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="h-9 text-sm rounded-md border-gray-200 focus:border-emerald-300 focus:ring-1 focus:ring-emerald-100 focus:outline-none outline-none shadow-none focus:shadow-none transition-colors">
+              <SelectValue placeholder="Recent" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">Recent</SelectItem>
+              <SelectItem value="name">A–Z</SelectItem>
+              <SelectItem value="author">Author</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +41,67 @@ interface ProfileFormData {
 }
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+// Avatar with fallback component - moved outside to prevent recreation
+const AvatarWithFallback = ({ 
+  avatar, 
+  name, 
+  size = "md", 
+  className = "" 
+}: { 
+  avatar?: string; 
+  name?: string; 
+  size?: "sm" | "md" | "lg"; 
+  className?: string;
+}) => {
+  const errorRef = useRef<Set<string>>(new Set());
+  const [imageError, setImageError] = useState(false);
+  const getUserInitial = (name: string | null | undefined) => {
+    return name ? name.charAt(0).toUpperCase() : 'U';
+  };
+
+  const sizeClasses = {
+    sm: "w-10 h-10 text-sm",
+    md: "w-12 h-12 text-sm", 
+    lg: "w-20 h-20 text-xl"
+  };
+
+  // Check if this specific avatar URL has errored before
+  const hasErrored = useMemo(() => {
+    return avatar ? errorRef.current.has(avatar) : false;
+  }, [avatar]);
+
+  const handleImageError = useCallback(() => {
+    if (avatar) {
+      errorRef.current.add(avatar);
+      setImageError(true);
+    }
+  }, [avatar]);
+
+  // Reset imageError when avatar changes
+  useEffect(() => {
+    if (avatar && !hasErrored) {
+      setImageError(false);
+    }
+  }, [avatar, hasErrored]);
+
+  return (
+    <>
+      {avatar && !imageError && !hasErrored ? (
+        <img 
+          src={avatar}
+          alt={name || 'Profile'}
+          className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
+          onError={handleImageError}
+        />
+      ) : (
+        <div className={`${sizeClasses[size]} bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold ${className}`}>
+          {getUserInitial(name)}
+        </div>
+      )}
+    </>
+  );
+};
 
 function cleanProfileData(profile: StoreProfile) {
   return {
@@ -391,17 +452,12 @@ const Profile = () => {
                   Profile Picture
                 </label>
                 <div className="flex items-center gap-4">
-                  {formData.avatar ? (
-                    <img
-                      src={formData.avatar}
-                      alt="Profile"
-                      className="w-20 h-20 rounded-full object-cover border-2 border-emerald-200"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center">
-                      <User className="h-8 w-8 text-white" />
-                    </div>
-                  )}
+                  <AvatarWithFallback 
+                    avatar={formData.avatar}
+                    name={formData.name}
+                    size="lg"
+                    className="border-2 border-emerald-200"
+                  />
                   <ImageUpload
                     value={formData.avatar}
                     onChange={(value) => setFormData(prev => ({ ...prev, avatar: value }))}

@@ -11,10 +11,10 @@ import NotFound from "./pages/NotFound";
 import AuthSuccessHandler from "./pages/AuthSuccessHandler"; // Import the new component
 import { useAuthStore } from "@/store/useAuthStore";
 import axiosInstance from "@/api/axiosInstance";
-import DashboardWrapper from "./components/DashboardWrapper";
 import Projects from "./pages/Projects";
 import ProjectPage from "./pages/ProjectPage"; // Import the new ProjectPage component
 import Profile from "./pages/Profile"; // Import the new Profile component
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 const API_URL = import.meta.env.VITE_API_URL;
@@ -79,6 +79,7 @@ const App = () => {
             <Route path="/projects" element={<Projects />} />
             <Route path="/project/:id" element={<ProjectPage />} /> {/* New route for ProjectPage */}
             <Route path="/profile" element={<Profile />} /> {/* New route for Profile */}
+            <Route path="/dashboard" element={<Dashboard />} />
             {/* <Route path="/dashboard" element={<div style={{padding: '2rem', textAlign: 'center'}}>Dashboard temporarily disabled for maintenance.</div>} /> */}
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/reset-password" element={<ResetPassword />} />

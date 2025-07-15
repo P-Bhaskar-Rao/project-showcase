@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { User, Mail, GraduationCap, Globe, Github, Linkedin, Twitter, Calendar, Building2, Award } from "lucide-react";
+import { useState } from "react";
 
 interface Education {
   institution: string;
@@ -38,6 +39,8 @@ interface AuthorModalProps {
 }
 
 const AuthorModal = ({ isOpen, onClose, author }: AuthorModalProps) => {
+  const [avatarError, setAvatarError] = useState(false);
+
   if (!author) return null;
 
   const formatDate = (dateString: string) => {
@@ -74,11 +77,12 @@ const AuthorModal = ({ isOpen, onClose, author }: AuthorModalProps) => {
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-4">
-            {author.avatar ? (
+            {author.avatar && !avatarError ? (
               <img
                 src={author.avatar}
                 alt={author.name}
                 className="w-16 h-16 rounded-full object-cover border-2 border-emerald-200"
+                onError={() => setAvatarError(true)}
               />
             ) : (
               <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-xl">

@@ -3,19 +3,16 @@ const { verifyAccessToken, extractTokenFromHeader } = require('../utils/jwt');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 
-/**
- * Middleware to protect routes by verifying JWT access token.
- * Attaches the decoded user payload to req.user if valid.
- * @param {Object} req - The Express request object.
- * @param {Object} res - The Express response object.
- * @param {Function} next - The next middleware function.
- */
+
 const authMiddleware = async (req, res, next) => {
   try {
+    console.log('[authMiddleware] Called for', req.method, req.originalUrl);
     const authHeader = req.headers.authorization;
     const accessToken = extractTokenFromHeader(authHeader);
+    console.log('[authMiddleware] Extracted token:', accessToken);
 
     if (!accessToken) {
+      console.log('[authMiddleware] No access token provided');
       return res.status(401).json({ success: false, error: 'Unauthorized: No access token provided' });
     }
 
@@ -23,7 +20,9 @@ const authMiddleware = async (req, res, next) => {
     let decoded;
     try {
       decoded = verifyAccessToken(accessToken);
+      console.log('[authMiddleware] Decoded token:', decoded);
     } catch (err) {
+      console.log('[authMiddleware] Invalid token:', err.message);
       return res.status(401).json({ success: false, error: 'Unauthorized: Invalid token' });
     }
 
@@ -32,22 +31,25 @@ const authMiddleware = async (req, res, next) => {
     try {
       user = await User.findById(decoded.userId);
       if (!user && mongoose.isValidObjectId(decoded.userId)) {
-        // Try with ObjectId conversion if not found
         user = await User.findById(new mongoose.Types.ObjectId(decoded.userId));
       }
+      console.log('[authMiddleware] User lookup result:', user ? user._id : 'not found');
     } catch (err) {
-      // Error handling for user lookup
+      console.log('[authMiddleware] Error during user lookup:', err.message);
     }
 
     if (!user) {
+      console.log('[authMiddleware] User not found');
       return res.status(401).json({ success: false, error: 'Unauthorized: User not found' });
     }
 
     // Attach user information to the request object
     req.user = user;
     req.user._id = user._id.toString(); // Always set as string
+    console.log('[authMiddleware] User attached to req, calling next()');
     next();
   } catch (error) {
+    console.log('[authMiddleware] General error:', error.message);
     return res.status(401).json({ success: false, error: 'Unauthorized: Invalid or expired token' });
   }
 };

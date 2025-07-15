@@ -61,11 +61,9 @@ export const useAuthStore = create<AuthState>()(
       profileCompleteness: false,
       isInitialized: false,
       setAuth: (user, accessToken) => {
-        console.log('[Zustand] setAuth called', user, accessToken);
         set({ user, accessToken });
       },
       clearAuth: () => {
-        console.log('[Zustand] clearAuth called');
         set({ user: null, accessToken: null, profile: null, profileCompleteness: false });
       },
       setProfile: (profile) => set({ profile }),
@@ -77,7 +75,6 @@ export const useAuthStore = create<AuthState>()(
         const user = get().user;
         const isInitialized = get().isInitialized;
         if (!user || !isInitialized) return;
-        console.log('[Zustand] fetchProfile called', { token, user, isInitialized });
         try {
           const res = await axiosInstance.get(`${API_URL}/profile`, {
             headers: { Authorization: `Bearer ${token}` }
@@ -97,9 +94,7 @@ export const useAuthStore = create<AuthState>()(
             set({ user: updatedUser });
           }
           
-          console.log('[Zustand] fetchProfile success', res.data.user);
         } catch (e) {
-          console.log('[Zustand] fetchProfile error', e);
           if (e && typeof e === 'object' && 'response' in e) {
             const error = e as { response?: { status?: number; data?: { code?: string } } };
             if (error.response?.status === 401 && error.response?.data?.code === 'USER_NOT_FOUND') {
@@ -111,7 +106,6 @@ export const useAuthStore = create<AuthState>()(
       updateProfile: async (profileData) => {
         const token = get().accessToken;
         if (!token) return false;
-        console.log('[Zustand] updateProfile called', profileData);
         try {
           const res = await axiosInstance.put(`${API_URL}/profile`, profileData, {
             headers: { Authorization: `Bearer ${token}` }
@@ -131,10 +125,8 @@ export const useAuthStore = create<AuthState>()(
             set({ user: updatedUser });
           }
           
-          console.log('[Zustand] updateProfile success', res.data.user);
           return true;
         } catch (e) {
-          console.log('[Zustand] updateProfile error', e);
           if (e && typeof e === 'object' && 'response' in e) {
             const error = e as { response?: { status?: number; data?: { code?: string } } };
             if (error.response?.status === 401 && error.response?.data?.code === 'USER_NOT_FOUND') {
@@ -150,15 +142,12 @@ export const useAuthStore = create<AuthState>()(
         const user = get().user;
         const isInitialized = get().isInitialized;
         if (!user || !isInitialized) return;
-        console.log('[Zustand] fetchProfileCompleteness called', { token, user, isInitialized });
         try {
           const res = await axiosInstance.get(`${API_URL}/profile/completeness`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           set({ profileCompleteness: res.data.isProfileComplete });
-          console.log('[Zustand] fetchProfileCompleteness success', res.data.isProfileComplete);
         } catch (e) {
-          console.log('[Zustand] fetchProfileCompleteness error', e);
           if (e && typeof e === 'object' && 'response' in e) {
             const error = e as { response?: { status?: number; data?: { code?: string } } };
             if (error.response?.status === 401 && error.response?.data?.code === 'USER_NOT_FOUND') {

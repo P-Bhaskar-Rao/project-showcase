@@ -19,14 +19,11 @@ const Home = () => {
   const handleSubmitProject = () => setIsSubmissionModalOpen(true);
 
   const openAuthModal = (mode: 'login' | 'signup') => {
-    console.log('[DEBUG] openAuthModal called with mode:', mode);
     setAuthMode(mode);
     setIsAuthModalOpen(true);
-    console.log('[DEBUG] Modal state set to open');
   };
 
   const handleGetStarted = () => {
-    console.log('[DEBUG] Get Started clicked, opening login modal');
     openAuthModal('login');
   };
 

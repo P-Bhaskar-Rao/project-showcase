@@ -1,20 +1,7 @@
 import { Filter } from "lucide-react";
 import ProjectCard from "./ProjectCard";
-
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  author: string;
-  authorId: string;
-  techStack: string[];
-  category: string;
-  githubUrl: string;
-  liveUrl?: string;
-  internshipPeriod: string;
-  image?: string;
-  architectureDiagram?: string;
-}
+import { Project } from "../types/Project";
+import ProjectSkeleton from "./ProjectSkeleton";
 
 interface ProjectGridProps {
   projects: Project[];
@@ -25,10 +12,13 @@ interface ProjectGridProps {
   onGithubClick: (e: React.MouseEvent, githubUrl: string) => void;
   onLiveDemoClick: (e: React.MouseEvent, liveUrl: string) => void;
   onArchitectureClick: (e: React.MouseEvent, architectureUrl: string) => void;
+  onRequireLogin?: () => void;
   showSearchNoResults?: boolean;
   onSubmitProject?: () => void;
   onEditProject?: (project: Project) => void;
   onDeleteProject?: (project: Project) => void;
+  emptyButtonText?: string;
+  loading?: boolean;
 }
 
 const ProjectGrid = ({
@@ -40,11 +30,24 @@ const ProjectGrid = ({
   onGithubClick,
   onLiveDemoClick,
   onArchitectureClick,
+  onRequireLogin,
   showSearchNoResults,
   onSubmitProject,
   onEditProject,
-  onDeleteProject
+  onDeleteProject,
+  emptyButtonText,
+  loading = false
 }: ProjectGridProps) => {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <ProjectSkeleton key={i} />
+        ))}
+      </div>
+    );
+  }
+
   if (projects.length === 0) {
     return (
       <div className="text-center py-12">
@@ -60,7 +63,7 @@ const ProjectGrid = ({
               className="mt-4 px-6 py-2 bg-emerald-600 text-white rounded-md font-semibold hover:bg-emerald-700 transition"
               onClick={onSubmitProject}
             >
-              Be the first to submit a project!
+              {emptyButtonText || 'Be the first to submit a project!'}
             </button>
           )}
         </div>
@@ -73,7 +76,7 @@ const ProjectGrid = ({
       {projects.map((project) => (
         <ProjectCard
           key={project.id}
-          project={{ ...project, projectType: (project as any).projectType || '' }}
+          project={project}
           isLoggedIn={isLoggedIn}
           isFavorite={false} // Hide favorite state
           onToggleFavorite={() => {}} // Disable favorite toggle
@@ -81,6 +84,7 @@ const ProjectGrid = ({
           onGithubClick={onGithubClick}
           onLiveDemoClick={onLiveDemoClick}
           onArchitectureClick={onArchitectureClick}
+          onRequireLogin={onRequireLogin}
           onEdit={onEditProject}
           onDelete={onDeleteProject}
         />

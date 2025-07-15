@@ -1,28 +1,16 @@
-import { Github, ExternalLink, Calendar, User, Heart, Lock, FileText, Pencil, Trash, Briefcase, Building2, Star } from "lucide-react";
+import { Github, ExternalLink, Calendar, User, Heart, Lock, FileText, Pencil, Trash, Briefcase, Building2, Star, MoreHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  author: string;
-  authorId: string;
-  techStack: string[];
-  category: string;
-  githubUrl: string;
-  liveUrl?: string;
-  internshipPeriod: string;
-  image?: string;
-  architectureDiagram?: string;
-  projectType: string;
-  companyName?: string;
-}
+import axiosInstance from "@/api/axiosInstance";
+import { Project } from "../types/Project";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { toast } from 'sonner';
+import axios from "axios";
 
 interface ProjectCardProps {
   project: Project;
@@ -33,6 +21,7 @@ interface ProjectCardProps {
   onGithubClick: (e: React.MouseEvent, githubUrl: string) => void;
   onLiveDemoClick: (e: React.MouseEvent, liveUrl: string) => void;
   onArchitectureClick: (e: React.MouseEvent, architectureUrl: string) => void;
+  onRequireLogin?: () => void;
   onEdit?: (project: Project) => void;
   onDelete?: (project: Project) => void;
 }
@@ -46,18 +35,42 @@ const ProjectCard = ({
   onGithubClick,
   onLiveDemoClick,
   onArchitectureClick,
+  onRequireLogin,
   onEdit,
   onDelete
 }: ProjectCardProps) => {
   const user = useAuthStore((state) => state.user);
   const accessToken = useAuthStore((state) => state.accessToken);
   const navigate = useNavigate();
-  useEffect(() => {
-    console.log('[DEBUG] ProjectCard user:', user);
-    console.log('[DEBUG] ProjectCard accessToken:', accessToken);
-  }, [user, accessToken]);
+  const [likes, setLikes] = useState(project.likes ? project.likes.length : 0);
+  const [liked, setLiked] = useState(project.likes ? project.likes.includes(user?.id) : false);
+  const API_URL = import.meta.env.VITE_API_URL;
+  const [engageCounts, setEngageCounts] = useState<{ [type: string]: number }>({});
+  const [totalEngages, setTotalEngages] = useState(0);
+  const [engageLoading, setEngageLoading] = useState(false);
+  const engageTypes = [
+    { label: 'Internship', value: 'internship' },
+    { label: 'Part-time', value: 'part-time' },
+    { label: 'Full-time', value: 'full-time' },
+    { label: 'Contract', value: 'contract' },
+  ];
 
-  console.log('[DEBUG] ProjectCard user:', user, 'project.authorId:', project.authorId);
+  useEffect(() => {
+    // Fetch engagement counts
+    const fetchEngagements = async () => {
+      try {
+        const res = await axiosInstance.get(`/profile/project/${project.id}/engagement-counts`);
+        if (res.data && res.data.success) {
+          setEngageCounts(res.data.engagements || {});
+          setTotalEngages(res.data.total || 0);
+        }
+      } catch (e) {
+        // Optionally handle error
+      }
+    };
+    fetchEngagements();
+  }, [project.id]);
+
   const isOwner = user && user.id === project.authorId;
 
   const getTechColor = (tech: string) => {
@@ -82,6 +95,60 @@ const ProjectCard = ({
   const buttonCount = 1 + (project.architectureDiagram ? 1 : 0) + (project.liveUrl ? 1 : 0);
   const hasThreeButtons = buttonCount === 3;
 
+  const handleLike = async () => {
+    if (!isLoggedIn) {
+      if (onRequireLogin) onRequireLogin();
+      return;
+    }
+    try {
+      const res = await axiosInstance.post(`${API_URL}/projects/${project.id}/like`);
+      if (res.data && res.data.success) {
+        setLikes(res.data.likes);
+        setLiked(res.data.liked);
+      }
+    } catch (e) {
+      // Optionally show a toast
+    }
+  };
+
+  const handleEngage = async (type: string) => {
+    if (!isLoggedIn) {
+      if (onRequireLogin) onRequireLogin();
+      return;
+    }
+    setEngageLoading(true);
+    try {
+      await axiosInstance.post('/profile/engagement', {
+        toUser: project.authorId,
+        project: project.id,
+        type
+      });
+      toast.success('Engagement recorded!');
+      
+      // Add a small delay to ensure backend has processed the engagement
+      setTimeout(async () => {
+        try {
+          // Use the correct endpoint for engagement counts
+          const res = await axiosInstance.get(`/profile/project/${project.id}/engagement-counts`);
+          if (res.data && res.data.success) {
+            setEngageCounts(res.data.engagements || {});
+            setTotalEngages(res.data.total || 0);
+          }
+        } catch (error) {
+          console.error('Failed to refresh engagement counts:', error);
+        }
+      }, 400);
+    } catch (e: unknown) {
+      if (axios.isAxiosError(e) && e.response?.data?.message) {
+        toast.error(e.response.data.message);
+      } else {
+        toast.error('Failed to engage.');
+      }
+    } finally {
+      setEngageLoading(false);
+    }
+  };
+
   return (
     <TooltipProvider>
       <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white border border-gray-200 flex flex-col h-full">
@@ -90,7 +157,13 @@ const ProjectCard = ({
             <div className="flex-1 min-w-0">
               <CardTitle
                 className="text-lg font-semibold text-gray-900 group-hover:text-emerald-600 transition-colors truncate cursor-pointer"
-                onClick={() => navigate(`/project/${project.id}`)}
+                onClick={() => {
+                  if (!isLoggedIn && onRequireLogin) {
+                    onRequireLogin();
+                    return;
+                  }
+                  navigate(`/project/${project.id}`);
+                }}
                 title={project.name}
               >
                 {project.name}
@@ -212,97 +285,147 @@ const ProjectCard = ({
             </div>
           </div>
           {/* Links */}
-          <div className={`pt-2 ${hasThreeButtons ? 'space-y-2' : 'flex gap-2'}`}>
-            {/* First row - Code button (always present) */}
-            <div className={hasThreeButtons ? 'flex' : 'contents'}>
-              <Button
-                variant="outline"
-                size="sm"
-                className={`${hasThreeButtons ? 'flex-1' : 'flex-1'} hover:bg-gray-50`}
-                onClick={(e) => onGithubClick(e, project.githubUrl)}
-                asChild={isLoggedIn}
-              >
-                {isLoggedIn ? (
-                  <a href={project.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
-                    <Github className="h-4 w-4" />
-                    <span>Code</span>
-                  </a>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <Lock className="h-4 w-4" />
-                    <span>Code</span>
-                  </div>
-                )}
-              </Button>
-            </div>
-
-            {/* Second row/column - Architecture and Live Demo */}
-            {(project.architectureDiagram || project.liveUrl) && (
-              <div className={`flex gap-2 ${hasThreeButtons ? 'flex-1' : ''}`}>
-                {project.architectureDiagram && (
+          <TooltipProvider>
+            <div className="flex flex-wrap gap-2 mt-2 items-center">
+              {/* Repo Link button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 hover:bg-gray-50"
-                    onClick={(e) => onArchitectureClick(e, project.architectureDiagram!)}
-                    asChild={isLoggedIn}
+                    className="px-2 py-1 text-xs flex items-center gap-1"
+                    disabled={
+                      project.repoVisibility === 'private' || (!isLoggedIn && project.repoVisibility === 'public')
+                    }
+                    onClick={e => {
+                      if (project.repoVisibility === 'private') {
+                        e.preventDefault();
+                        toast.error('The user has set this repo to private.');
+                        return;
+                      }
+                      if (!isLoggedIn && project.repoVisibility === 'public') {
+                        e.preventDefault();
+                        toast.error('Please log in to view the repo link.');
+                        if (onRequireLogin) onRequireLogin();
+                        return;
+                      }
+                      onGithubClick(e, project.githubUrl);
+                    }}
+                    asChild
                   >
-                    {isLoggedIn ? (
-                      <a href={project.architectureDiagram} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        <span className={hasThreeButtons ? 'text-xs' : 'hidden sm:inline'}>
-                          {hasThreeButtons ? 'Arch' : 'Architecture'}
-                        </span>
-                        {!hasThreeButtons && <span className="sm:hidden">Arch</span>}
-                      </a>
-                    ) : (
-                      <div className="flex items-center justify-center gap-2">
-                        <Lock className="h-4 w-4" />
-                        <span className={hasThreeButtons ? 'text-xs' : 'hidden sm:inline'}>
-                          {hasThreeButtons ? 'Arch' : 'Architecture'}
-                        </span>
-                        {!hasThreeButtons && <span className="sm:hidden">Arch</span>}
-                      </div>
-                    )}
+                    <a
+                      href={project.githubUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      tabIndex={-1}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      <span className="truncate">Repo</span>
+                    </a>
                   </Button>
-                )}
+                </TooltipTrigger>
+                <TooltipContent>Repo</TooltipContent>
+              </Tooltip>
 
-                {project.liveUrl && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
+              {/* Architecture button */}
+              {project.architectureDiagram && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <a
+                      href={project.architectureDiagram}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      tabIndex={-1}
+                    >
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="px-2 py-1 text-xs flex items-center gap-1"
+                        onClick={(e) => { if (!isLoggedIn && onRequireLogin) { e.preventDefault(); onRequireLogin(); return; } onArchitectureClick(e, project.architectureDiagram!); }}
+                      >
+                        <FileText className="h-3 w-3" />
+                        <span className="truncate">Architecture</span>
+                      </Button>
+                    </a>
+                  </TooltipTrigger>
+                  <TooltipContent>Architecture</TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* Live Demo button */}
+              {project.liveUrl && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <a
+                      href={project.liveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      tabIndex={-1}
+                    >
                       <Button
                         size="sm"
-                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                        onClick={(e) => onLiveDemoClick(e, project.liveUrl!)}
-                        asChild={isLoggedIn}
+                        className="px-2 py-1 text-xs flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+                        onClick={(e) => { if (!isLoggedIn && onRequireLogin) { e.preventDefault(); onRequireLogin(); return; } onLiveDemoClick(e, project.liveUrl!); }}
                       >
-                        {isLoggedIn ? (
-                          <a href={project.liveUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
-                            <ExternalLink className="h-4 w-4" />
-                            <span className={hasThreeButtons ? 'text-xs' : 'hidden sm:inline'}>
-                              {hasThreeButtons ? 'Demo' : 'Live Demo'}
-                            </span>
-                            {!hasThreeButtons && <span className="sm:hidden">Demo</span>}
-                          </a>
-                        ) : (
-                          <div className="flex items-center justify-center gap-2">
-                            <Lock className="h-4 w-4" />
-                            <span className={hasThreeButtons ? 'text-xs' : 'hidden sm:inline'}>
-                              {hasThreeButtons ? 'Demo' : 'Live Demo'}
-                            </span>
-                            {!hasThreeButtons && <span className="sm:hidden">Demo</span>}
-                          </div>
-                        )}
+                        <ExternalLink className="h-3 w-3" />
+                        <span className="truncate">Live Demo</span>
                       </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>The site may not be Live</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            )}
-          </div>
+                    </a>
+                  </TooltipTrigger>
+                  <TooltipContent>Live Demo</TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* Only render Engage button if the current user is NOT the owner */}
+              {project.authorId !== user?.id && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="px-2 py-1 text-xs flex items-center gap-1"
+                        >
+                          <User className="h-3 w-3" />
+                          <span className="truncate">Engage</span>
+                          <span className="ml-1 text-xs text-emerald-600 font-semibold">{totalEngages}</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {engageTypes.map(type => (
+                          <DropdownMenuItem key={type.value} onClick={() => handleEngage(type.value)} disabled={engageLoading}>
+                            {type.label}
+                            {engageCounts[type.value] ? (
+                              <span className="ml-2 text-xs text-gray-500">({engageCounts[type.value]})</span>
+                            ) : null}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TooltipTrigger>
+                  <TooltipContent>Engage</TooltipContent>
+                </Tooltip>
+              )}
+
+              {/* Like button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`px-2 py-1 flex items-center gap-1 text-xs ${liked ? 'text-emerald-600' : 'text-gray-500'}`}
+                    onClick={handleLike}
+                    aria-label={liked ? 'Unlike' : 'Like'}
+                  >
+                    <Heart fill={liked ? '#059669' : 'none'} strokeWidth={2} className="h-3 w-3" />
+                    <span>{likes}</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Like</TooltipContent>
+              </Tooltip>
+            </div>
+          </TooltipProvider>
         </CardContent>
       </Card>
     </TooltipProvider>

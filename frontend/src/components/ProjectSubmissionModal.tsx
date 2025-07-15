@@ -30,6 +30,7 @@ interface Project {
   techStack: string[];
   authorId?: string;
   internshipPeriod?: string;
+  repoVisibility?: string;
 }
 
 interface ProjectSubmissionModalProps {
@@ -55,7 +56,8 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
     projectStartDate: initialData?.projectStartDate || "",
     projectEndDate: initialData?.projectEndDate || "",
     architectureDiagram: initialData?.architectureDiagram || "",
-    techStack: initialData?.techStack || []
+    techStack: initialData?.techStack || [],
+    repoVisibility: initialData?.repoVisibility || "public"
   });
   const [newTech, setNewTech] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -92,7 +94,8 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
         projectStartDate: initialData.projectStartDate || "",
         projectEndDate: initialData.projectEndDate || "",
         architectureDiagram: initialData.architectureDiagram || "",
-        techStack: initialData.techStack || []
+        techStack: initialData.techStack || [],
+        repoVisibility: initialData.repoVisibility || "public"
       });
     } else if (isOpen) {
       setFormData({
@@ -109,7 +112,8 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
         projectStartDate: "",
         projectEndDate: "",
         architectureDiagram: "",
-        techStack: []
+        techStack: [],
+        repoVisibility: "public"
       });
     }
   }, [initialData, isOpen]);
@@ -156,7 +160,10 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
       return;
     }
 
-    // Project type specific validation
+    // Date should not be in the future
+    const today = new Date();
+    today.setHours(0,0,0,0); // ignore time
+    let startDate, endDate;
     if (formData.projectType === "internship") {
       if (!formData.companyName || !formData.internshipStartDate || !formData.internshipEndDate) {
         toast({
@@ -166,8 +173,17 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
         });
         return;
       }
-      // Allow same month for start and end
-      if (new Date(formData.internshipEndDate + "-01") < new Date(formData.internshipStartDate + "-01")) {
+      startDate = new Date(formData.internshipStartDate + "-01");
+      endDate = new Date(formData.internshipEndDate + "-01");
+      if (startDate > today || endDate > today) {
+        toast({
+          title: "Invalid Dates",
+          description: "Internship dates cannot be in the future.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (endDate < startDate) {
         toast({
           title: "Invalid Dates",
           description: "End date must be after or same as start date.",
@@ -184,8 +200,17 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
         });
         return;
       }
-      // Allow same month for start and end
-      if (new Date(formData.projectEndDate + "-01") < new Date(formData.projectStartDate + "-01")) {
+      startDate = new Date(formData.projectStartDate + "-01");
+      endDate = new Date(formData.projectEndDate + "-01");
+      if (startDate > today || endDate > today) {
+        toast({
+          title: "Invalid Dates",
+          description: "Project dates cannot be in the future.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (endDate < startDate) {
         toast({
           title: "Invalid Dates",
           description: "End date must be after or same as start date.",
@@ -234,7 +259,8 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
         projectStartDate: "",
         projectEndDate: "",
         architectureDiagram: "",
-        techStack: []
+        techStack: [],
+        repoVisibility: "public"
       });
       onClose();
     } catch (error) {
@@ -287,22 +313,30 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
             </div>
 
             {/* Project Type */}
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Label>Project Type *</Label>
-              <RadioGroup
-                value={formData.projectType}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, projectType: value }))}
-                className="flex flex-col space-y-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="personal" id="personal" />
-                  <Label htmlFor="personal">Personal Project</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="internship" id="internship" />
-                  <Label htmlFor="internship">Internship Project</Label>
-                </div>
-              </RadioGroup>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="projectType"
+                    value="personal"
+                    checked={formData.projectType === "personal"}
+                    onChange={() => setFormData(prev => ({ ...prev, projectType: "personal" }))}
+                  />
+                  Personal Project
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="projectType"
+                    value="internship"
+                    checked={formData.projectType === "internship"}
+                    onChange={() => setFormData(prev => ({ ...prev, projectType: "internship" }))}
+                  />
+                  Internship Project
+                </label>
+              </div>
             </div>
 
             {/* Conditional Fields based on Project Type */}
@@ -428,17 +462,43 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
               </div>
             </div>
 
-            {/* GitHub URL */}
+            {/* Repo Link */}
             <div className="space-y-2">
-              <Label htmlFor="githubUrl">GitHub Repository URL *</Label>
+              <Label htmlFor="githubUrl">Repo Link *</Label>
               <Input
                 id="githubUrl"
                 type="url"
                 value={formData.githubUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, githubUrl: e.target.value }))}
-                placeholder="https://github.com/username/repository"
+                placeholder="https://your-repo-host.com/user/repo"
                 required
               />
+            </div>
+            {/* Repo Visibility */}
+            <div className="space-y-2">
+              <Label>Repo Link Visibility *</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="repoVisibility"
+                    value="public"
+                    checked={formData.repoVisibility === "public"}
+                    onChange={() => setFormData(prev => ({ ...prev, repoVisibility: "public" }))}
+                  />
+                  Public
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="repoVisibility"
+                    value="private"
+                    checked={formData.repoVisibility === "private"}
+                    onChange={() => setFormData(prev => ({ ...prev, repoVisibility: "private" }))}
+                  />
+                  Private
+                </label>
+              </div>
             </div>
 
             {/* Live Demo URL */}

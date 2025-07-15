@@ -18,9 +18,6 @@ import { useToast } from "@/hooks/use-toast";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Add a console.log here to confirm API_URL is loaded at module level
-console.log("SignupModal: API_URL loaded as:", API_URL);
-
 const signupSchema = z.object({
   name: z
     .string()
@@ -100,7 +97,6 @@ const SignupModal = ({
         onSignupSuccess(data.email);
       }
     } catch (error: any) {
-      console.log(error);
       const message =
         error.response?.data?.error ||
         error.response?.data?.message ||
@@ -114,11 +110,7 @@ const SignupModal = ({
   };
 
   const handleSocialAuth = (provider: string) => {
-    console.log(`Social Auth button clicked for: ${provider}`);
     const authBaseUrl = API_URL;
-    console.log(
-      `Initiating OAuth with full URL: ${authBaseUrl}/auth/${provider.toLowerCase()}`
-    );
     window.location.href =
       provider === "Google"
         ? `${authBaseUrl}/auth/google`
@@ -158,7 +150,6 @@ const SignupModal = ({
               variant="outline"
               className="w-full h-11"
               onClick={() => {
-                console.log("Google button onClick handler fired!");
                 handleSocialAuth("Google");
               }}
             >
@@ -186,7 +177,6 @@ const SignupModal = ({
               variant="outline"
               className="w-full h-11"
               onClick={() => {
-                console.log("GitHub button onClick handler fired!"); // Add this specific log
                 handleSocialAuth("GitHub");
               }}
             >

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from 'sonner';
 import AuthModal from "@/components/AuthModal";
 import AuthorModal from "@/components/AuthorModal";
 import ProjectSubmissionModal from "@/components/ProjectSubmissionModal";
@@ -13,21 +13,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import axiosInstance from "@/api/axiosInstance";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-
-interface ProjectType {
-  id: string;
-  name: string;
-  description: string;
-  author: string;
-  authorId: string;
-  techStack: string[];
-  category: string;
-  githubUrl: string;
-  liveUrl?: string;
-  internshipPeriod: string;
-  image?: string;
-  architectureDiagram?: string;
-}
+import PaginationControls from "@/components/PaginationControls";
+import { Project } from "../types/Project";
 
 interface Author {
   name: string;
@@ -52,20 +39,24 @@ const Projects = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(!!user);
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
   const [isProfileCompletionModalOpen, setIsProfileCompletionModalOpen] = useState(false);
-  const [projects, setProjects] = useState<ProjectType[]>([]);
-  const { toast } = useToast();
+  const [projects, setProjects] = useState<Project[]>([]);
   const API_URL = import.meta.env.VITE_API_URL;
   const accessToken = useAuthStore((state) => state.accessToken);
   const setAuth = useAuthStore((state) => state.setAuth);
-  const [editingProject, setEditingProject] = useState<ProjectType | null>(null);
-  const [projectToDelete, setProjectToDelete] = useState<ProjectType | null>(null);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const isInitialized = useAuthStore((state) => state.isInitialized);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const PROJECTS_PER_PAGE = 6;
+
   const openAuthModal = (mode: 'login' | 'signup') => {
     setAuthMode(mode);
     setIsAuthModalOpen(true);
   };
-  const { favorites, toggleFavorite, loading: favoritesLoading } = useFavorites(isLoggedIn && isInitialized, openAuthModal);
+  const { favorites, toggleFavorite, loading: favoritesLoading } = useFavorites(isLoggedIn && isInitialized, openAuthModal) as { favorites: Set<string>, toggleFavorite: (id: string) => void, loading: boolean };
 
   useEffect(() => {
     if (user) {
@@ -78,39 +69,40 @@ const Projects = () => {
   }, [user]);
 
   useEffect(() => {
-    // Fetch projects from backend on mount
+    // Fetch projects from backend on mount or page change
     const fetchProjects = async () => {
+      setLoading(true);
       try {
-        type BackendProject = Omit<ProjectType, 'id'> & { _id?: string, id?: string, authorId?: string };
-        const response = await axiosInstance.get(`${API_URL}/projects`);
+        type BackendProject = Omit<Project, 'id'> & { _id?: string, id?: string, authorId?: string };
+        const response = await axiosInstance.get(`${API_URL}/projects?page=${page}&limit=${PROJECTS_PER_PAGE}`);
         if (response.data && Array.isArray(response.data.projects)) {
-          // Map _id to id and authorId for frontend compatibility
-          const mappedProjects: ProjectType[] = response.data.projects.map((project: BackendProject): ProjectType => ({
+          const mappedProjects: Project[] = response.data.projects.map((project: BackendProject): Project => ({
             ...project,
-            id: project._id || project.id || '', // Always ensure id is present and unique
+            id: project._id || project.id || '',
             authorId: project.authorId || '',
           }));
           setProjects(mappedProjects);
+          setTotalPages(response.data.totalPages || 1);
         }
       } catch (error) {
-        // Optionally show a toast or log error
         console.error('Failed to fetch projects:', error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchProjects();
-  }, [API_URL]);
+  }, [API_URL, page]);
 
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const {
     searchTerm,
     setSearchTerm,
-    selectedCategory,
-    setSelectedCategory,
     selectedTech,
     setSelectedTech,
     sortBy,
     setSortBy,
     filteredProjects
-  } = useProjectFilters(projects);
+  } = useProjectFilters(projects, selectedCategory);
 
   const techOptions = useMemo(() => 
     Array.from(new Set(projects.flatMap(p => p.techStack))).sort(), 
@@ -119,11 +111,7 @@ const Projects = () => {
 
   const openAuthorModal = async (authorId: string, authorName: string) => {
     if (!isLoggedIn) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to view author profiles.",
-        variant: "destructive",
-      });
+      toast.error("Authentication Required: Please sign in to view author profiles.");
       openAuthModal('login');
       return;
     }
@@ -137,21 +125,13 @@ const Projects = () => {
     } catch (e) {
       // If not found in DB, fall back to generated author
     }
-    toast({
-      title: "Author Not Found",
-      description: "Author information is not available.",
-      variant: "destructive",
-    });
+    toast.error("Author Not Found: Author information is not available.");
   };
 
   const handleGithubClick = (e: React.MouseEvent, githubUrl: string) => {
     if (!isLoggedIn) {
       e.preventDefault();
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to view project code.",
-        variant: "destructive",
-      });
+      toast.error("Authentication Required: Please sign in to view project code.");
       openAuthModal('login');
       return;
     }
@@ -161,11 +141,7 @@ const Projects = () => {
   const handleLiveDemoClick = (e: React.MouseEvent, liveUrl: string) => {
     if (!isLoggedIn) {
       e.preventDefault();
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to view live demos.",
-        variant: "destructive",
-      });
+      toast.error("Authentication Required: Please sign in to view live demos.");
       openAuthModal('login');
       return;
     }
@@ -175,11 +151,7 @@ const Projects = () => {
   const handleArchitectureClick = (e: React.MouseEvent, architectureUrl: string) => {
     if (!isLoggedIn) {
       e.preventDefault();
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to view architecture diagrams.",
-        variant: "destructive",
-      });
+      toast.error("Authentication Required: Please sign in to view architecture diagrams.");
       openAuthModal('login');
       return;
     }
@@ -205,7 +177,7 @@ const Projects = () => {
     return null;
   };
 
-  const handleProjectSubmission = async (newProject: ProjectType) => {
+  const handleProjectSubmission = async (newProject: Project) => {
     console.log('[DEBUG] Submitting project payload:', newProject);
     let triedRefresh = false;
     let tokenToUse = accessToken;
@@ -230,8 +202,7 @@ const Projects = () => {
           ...prev
         ]);
         setIsSubmissionModalOpen(false);
-        toast({
-          title: "Project Submitted!",
+        toast.success("Project Submitted!", {
           description: "Your project has been successfully submitted and is now visible.",
         });
         break;
@@ -245,19 +216,15 @@ const Projects = () => {
             triedRefresh = true;
             continue;
           } else {
-            toast({
-              title: "Session Expired",
+            toast.error("Session Expired", {
               description: "Please log in again to submit your project.",
-              variant: "destructive",
             });
             setIsAuthModalOpen(true);
             break;
           }
         }
-        toast({
-          title: "Submission Failed",
+        toast.error("Submission Failed", {
           description: "There was an error submitting your project. Please try again.",
-          variant: "destructive",
         });
         break;
       }
@@ -269,12 +236,12 @@ const Projects = () => {
     window.location.href = '/dashboard';
   };
 
-  const handleEditProject = (project: ProjectType) => {
+  const handleEditProject = (project: Project) => {
     setEditingProject(project);
     setIsSubmissionModalOpen(true);
   };
 
-  const handleUpdateProject = async (updatedProject: ProjectType) => {
+  const handleUpdateProject = async (updatedProject: Project) => {
     try {
       const response = await axiosInstance.patch(
         `${API_URL}/projects/${updatedProject.id}`,
@@ -291,13 +258,17 @@ const Projects = () => {
       } : p));
       setEditingProject(null);
       setIsSubmissionModalOpen(false);
-      toast({ title: 'Project Updated!', description: 'Your project has been updated.' });
+      toast.success('Project Updated!', {
+        description: 'Your project has been updated.',
+      });
     } catch (error) {
-      toast({ title: 'Update Failed', description: 'Could not update project.', variant: 'destructive' });
+      toast.error('Update Failed', {
+        description: 'Could not update project.',
+      });
     }
   };
 
-  const handleDeleteProject = (project: ProjectType) => {
+  const handleDeleteProject = (project: Project) => {
     setProjectToDelete(project);
     setIsDeleteModalOpen(true);
   };
@@ -310,9 +281,13 @@ const Projects = () => {
         withCredentials: true,
       });
       setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
-      toast({ title: "Project Deleted", description: "Your project has been deleted.", variant: "destructive" });
+      toast.success("Project Deleted", {
+        description: "Your project has been deleted.",
+      });
     } catch (error) {
-      toast({ title: "Delete Failed", description: "Could not delete project.", variant: "destructive" });
+      toast.error("Delete Failed", {
+        description: "Could not delete project.",
+      });
     } finally {
       setIsDeleteModalOpen(false);
       setProjectToDelete(null);
@@ -320,7 +295,7 @@ const Projects = () => {
   };
 
   // Only sort and render when favorites are loaded
-  let sortedProjects: ProjectType[] = [];
+  let sortedProjects: Project[] = [];
   if (!favoritesLoading) {
     sortedProjects = [...filteredProjects].sort((a, b) => {
       const aFav = favorites.has(a.id.toString());
@@ -331,6 +306,12 @@ const Projects = () => {
   }
   console.log('[DEBUG] favorites:', Array.from(favorites));
   console.log('[DEBUG] sortedProjects:', sortedProjects.map(p => ({ id: p.id, name: p.name })));
+
+  const isFiltered =
+    searchTerm.trim() !== "" ||
+    selectedCategory !== "All Categories" ||
+    selectedTech !== "All";
+  const filteredTotalPages = Math.ceil(filteredProjects.length / PROJECTS_PER_PAGE);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
@@ -357,24 +338,29 @@ const Projects = () => {
           />
         )}
 
-        {favoritesLoading ? (
-          <div className="py-12 text-center text-gray-500">Loading projects...</div>
-        ) : (
-          <ProjectGrid
-            projects={sortedProjects}
-            isLoggedIn={isLoggedIn}
-            favorites={favorites}
-            onToggleFavorite={toggleFavorite}
-            onAuthorClick={(authorId, authorName) => { void openAuthorModal(authorId, authorName); }}
-            onGithubClick={handleGithubClick}
-            onLiveDemoClick={handleLiveDemoClick}
-            onArchitectureClick={handleArchitectureClick}
-            showSearchNoResults={projects.length > 0 && filteredProjects.length === 0}
-            onSubmitProject={handleSubmitProject}
-            onEditProject={handleEditProject}
-            onDeleteProject={handleDeleteProject}
-          />
-        )}
+        <ProjectGrid
+          projects={filteredProjects}
+          isLoggedIn={isLoggedIn}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
+          onAuthorClick={openAuthorModal}
+          onGithubClick={handleGithubClick}
+          onLiveDemoClick={handleLiveDemoClick}
+          onArchitectureClick={handleArchitectureClick}
+          onRequireLogin={() => openAuthModal('login')}
+          onSubmitProject={handleSubmitProject}
+          onEditProject={handleEditProject}
+          onDeleteProject={handleDeleteProject}
+          showSearchNoResults={projects.length > 0 && filteredProjects.length === 0}
+          loading={loading}
+        />
+        {isFiltered
+          ? filteredTotalPages > 1 && (
+              <PaginationControls page={page} totalPages={filteredTotalPages} onPageChange={setPage} />
+            )
+          : totalPages > 1 && (
+              <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+            )}
       </main>
 
       <footer className="bg-white border-t border-gray-200 mt-16">

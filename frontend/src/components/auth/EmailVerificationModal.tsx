@@ -6,8 +6,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Mail, CheckCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const API_URL=import.meta.env.VITE_API_URL
-console.log(API_URL)
 interface EmailVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;

@@ -1,10 +1,66 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, X, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { uploadImage, deleteImage } from '@/lib/supabase';
+
+// Avatar with fallback component
+const AvatarWithFallback = ({ 
+  avatar, 
+  size = "md", 
+  className = "" 
+}: { 
+  avatar?: string; 
+  size?: "sm" | "md" | "lg"; 
+  className?: string;
+}) => {
+  const errorRef = useRef<Set<string>>(new Set());
+  const [imageError, setImageError] = useState(false);
+
+  const sizeClasses = {
+    sm: "w-16 h-16 text-sm",
+    md: "w-12 h-12 text-sm", 
+    lg: "w-20 h-20 text-xl"
+  };
+
+  // Check if this specific avatar URL has errored before
+  const hasErrored = useMemo(() => {
+    return avatar ? errorRef.current.has(avatar) : false;
+  }, [avatar]);
+
+  const handleImageError = useCallback(() => {
+    if (avatar) {
+      errorRef.current.add(avatar);
+      setImageError(true);
+    }
+  }, [avatar]);
+
+  // Reset imageError when avatar changes
+  useEffect(() => {
+    if (avatar && !hasErrored) {
+      setImageError(false);
+    }
+  }, [avatar, hasErrored]);
+
+  return (
+    <>
+      {avatar && !imageError && !hasErrored ? (
+        <img 
+          src={avatar}
+          alt="Profile"
+          className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
+          onError={handleImageError}
+        />
+      ) : (
+        <div className={`${sizeClasses[size]} bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold ${className}`}>
+          <User className="h-6 w-6" />
+        </div>
+      )}
+    </>
+  );
+};
 
 interface ImageUploadProps {
   value?: string;
@@ -112,10 +168,10 @@ const ImageUpload = ({ value, onChange, onError, className, onImageChange }: Ima
           // Show uploaded image
           <div className="space-y-2">
             <div className="relative inline-block">
-              <img
-                src={value}
-                alt="Profile"
-                className="w-16 h-16 rounded-full object-cover mx-auto border-2 border-emerald-200"
+              <AvatarWithFallback 
+                avatar={value}
+                size="sm"
+                className="mx-auto border-2 border-emerald-200"
               />
               <Button
                 type="button"

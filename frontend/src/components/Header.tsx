@@ -12,6 +12,7 @@ import { User as UserIcon, LogOut, LayoutDashboard, User as UserIcon2 } from "lu
 import { useToast } from "@/hooks/use-toast"; // Import useToast for notifications
 import axiosInstance from "@/api/axiosInstance";
 import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useState } from "react";
 
 interface HeaderProps {
   isLoggedIn: boolean;
@@ -27,6 +28,7 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
   const { toast } = useToast(); // Initialize toast
   const navigate = useNavigate();
   const location = useLocation();
+  const [avatarError, setAvatarError] = useState(false);
 
   const navLinkBase = "relative px-2 py-1 sm:px-3 sm:py-2 rounded-md font-semibold text-sm sm:text-base text-center transition-all duration-200 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-full after:h-[3px] after:bg-emerald-600 after:transition-transform after:duration-300 after:origin-left";
 
@@ -74,27 +76,35 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div className="w-full md:w-[75%]">
+          <div className="w-full md:w-[60%]">
             <h1 className="text-2xl sm:text-3xl font-bold text-emerald-600">
-              ProjectShowcase
+              Projectify
             </h1>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">Discover amazing projects built by talented interns</p>
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">Discover amazing projects built by talented developers</p>
           </div>
           {/* Nav and Auth Row: on mobile, links left, buttons right; on md+, all grouped right with gap */}
-          <div className="w-full md:w-[25%] flex flex-row items-center justify-between md:justify-end md:gap-8">
-            <nav className="flex flex-row flex-nowrap gap-2">
+          <div className="w-full md:w-[40%] flex flex-row items-center justify-between md:justify-end md:gap-8">
+            <nav className="flex flex-row flex-nowrap gap-2 whitespace-nowrap">
               <Link
                 to="/"
-                className={`${navLinkBase} ${location.pathname === '/' ? 'text-emerald-600 after:scale-x-100 after:decoration-4' : 'text-gray-700 hover:text-emerald-600 after:scale-x-0 hover:after:scale-x-100 after:decoration-4'}`}
+                className={`${navLinkBase} whitespace-nowrap ${location.pathname === '/' ? 'text-emerald-600 after:scale-x-100 after:decoration-4' : 'text-gray-700 hover:text-emerald-600 after:scale-x-0 hover:after:scale-x-100 after:decoration-4'}`}
               >
                 Home
               </Link>
               <Link
                 to="/projects"
-                className={`${navLinkBase} ${location.pathname === '/projects' ? 'text-emerald-600 after:scale-x-100 after:decoration-4' : 'text-gray-700 hover:text-emerald-600 after:scale-x-0 hover:after:scale-x-100 after:decoration-4'}`}
+                className={`${navLinkBase} whitespace-nowrap ${location.pathname === '/projects' ? 'text-emerald-600 after:scale-x-100 after:decoration-4' : 'text-gray-700 hover:text-emerald-600 after:scale-x-0 hover:after:scale-x-100 after:decoration-4'}`}
               >
                 Projects
               </Link>
+              {isLoggedIn && (
+                <Link
+                  to="/dashboard"
+                  className={`${navLinkBase} whitespace-nowrap ${location.pathname === '/dashboard' ? 'text-emerald-600 after:scale-x-100 after:decoration-4' : 'text-gray-700 hover:text-emerald-600 after:scale-x-0 hover:after:scale-x-100 after:decoration-4'}`}
+                >
+                  Dashboard
+                </Link>
+              )}
             </nav>
             <div className="flex flex-row gap-2">
               {isLoggedIn ? (
@@ -121,11 +131,12 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
                         variant="ghost"
                         className="relative h-9 w-9 rounded-full overflow-hidden p-0 flex items-center justify-center border border-emerald-600" 
                       >
-                        {user?.avatar ? (
+                        {user?.avatar && !avatarError ? (
                           <img
                             src={user.avatar}
                             alt={user.name}
                             className="w-full h-full object-cover"
+                            onError={() => setAvatarError(true)}
                           />
                         ) : (
                           <div className="w-full h-full bg-emerald-600 flex items-center justify-center text-white font-semibold text-sm">

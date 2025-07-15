@@ -13,10 +13,13 @@ import {
   Briefcase, 
   Building2, 
   Star,
-  Code
+  Code,
+  Heart,
+  Users
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const getTechColor = (tech: string) => {
   const colors: Record<string, string> = {
@@ -42,12 +45,22 @@ const ProjectPage = () => {
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const user = useAuthStore((state) => state.user);
+  const isLoggedIn = !!user;
+  const [likes, setLikes] = useState(project?.likes ? project.likes.length : 0);
+  const [liked, setLiked] = useState(project?.likes ? project.likes.includes(user?.id) : false);
+  const [engageCount, setEngageCount] = useState<number>(0);
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchProject = async () => {
       try {
         const res = await axiosInstance.get(`/projects/${id}`);
         setProject(res.data.project);
+        const engagesRes = await axiosInstance.get(`/projects/${id}/engages`);
+        if (engagesRes.data && engagesRes.data.success) {
+          setEngageCount(engagesRes.data.total || 0);
+        }
       } catch (err) {
         setError("Project not found.");
       } finally {
@@ -56,6 +69,24 @@ const ProjectPage = () => {
     };
     fetchProject();
   }, [id]);
+
+  useEffect(() => {
+    if (project) {
+      setLikes(project.likes ? project.likes.length : 0);
+      setLiked(project.likes ? project.likes.includes(user?.id) : false);
+    }
+  }, [project, user]);
+
+  const handleLike = async () => {
+    if (!isLoggedIn) return;
+    try {
+      const res = await axiosInstance.post(`${API_URL}/projects/${project._id || project.id}/like`);
+      if (res.data && res.data.success) {
+        setLikes(res.data.likes);
+        setLiked(res.data.liked);
+      }
+    } catch (e) {}
+  };
 
   if (loading) return <div className="flex justify-center items-center h-96 text-lg">Loading...</div>;
   if (error) return <div className="flex justify-center items-center h-96 text-red-600">{error}</div>;
@@ -117,7 +148,12 @@ const ProjectPage = () => {
                 </div>
               </div>
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3 items-center">
+                {/* Engagements count */}
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-emerald-500" />
+                  <span className="text-emerald-700 font-semibold text-sm">{engageCount} Engagement{engageCount === 1 ? '' : 's'}</span>
+                </div>
                 <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
                   <button className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-all duration-200 text-sm font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
                     <Github className="h-4 w-4" />
@@ -140,6 +176,15 @@ const ProjectPage = () => {
                     </button>
                   </a>
                 )}
+                <button
+                  className={`flex items-center gap-1 px-3 py-2 rounded-xl border text-sm font-medium transition ${liked ? 'text-emerald-600 border-emerald-300' : 'text-gray-500 border-gray-200 hover:text-emerald-600 hover:border-emerald-300'}`}
+                  onClick={handleLike}
+                  disabled={!isLoggedIn}
+                  aria-label={liked ? 'Unlike' : 'Like'}
+                >
+                  <Heart fill={liked ? '#059669' : 'none'} strokeWidth={2} className="h-5 w-5" />
+                  <span>{likes}</span>
+                </button>
               </div>
             </div>
           </div>

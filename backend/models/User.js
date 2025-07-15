@@ -294,7 +294,6 @@ userSchema.statics.findOrCreateOAuthUser = async function(profile, provider) {
     await user.save();
     return user;
   } catch (error) {
-    console.error(`Error in findOrCreateOAuthUser for ${provider}:`, error);
     throw new Error(`OAuth user creation failed: ${error.message}`);
   }
 };
