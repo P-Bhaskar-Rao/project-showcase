@@ -109,6 +109,12 @@ const Projects = () => {
     [projects]
   );
 
+  const categoryOptions = useMemo(() => {
+    // Gather all categories, flatten if array, deduplicate, and sort
+    const allCategories = projects.flatMap(p => Array.isArray(p.category) ? p.category : [p.category]);
+    return Array.from(new Set(allCategories.filter(Boolean))).sort();
+  }, [projects]);
+
   const openAuthorModal = async (authorId: string, authorName: string) => {
     if (!isLoggedIn) {
       toast.error("Authentication Required: Please sign in to view author profiles.");
@@ -333,6 +339,7 @@ const Projects = () => {
             techOptions={techOptions}
             totalProjects={projects.length}
             filteredCount={filteredProjects.length}
+            categoryOptions={categoryOptions}
           />
         )}
 

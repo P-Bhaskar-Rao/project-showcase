@@ -2,8 +2,6 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const categories = ["All Categories", "Web App", "Mobile App", "AI/ML", "Blockchain", "IoT"];
-
 interface SearchFiltersProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
@@ -16,6 +14,7 @@ interface SearchFiltersProps {
   techOptions: string[];
   totalProjects: number;
   filteredCount: number;
+  categoryOptions: string[]; // <-- new prop
 }
 
 const SearchFilters = ({
@@ -29,7 +28,8 @@ const SearchFilters = ({
   setSortBy,
   techOptions,
   totalProjects,
-  filteredCount
+  filteredCount,
+  categoryOptions // <-- new prop
 }: SearchFiltersProps) => {
   return (
     <div className="bg-white rounded-lg p-3 mb-4 border border-gray-200 w-full">
@@ -64,7 +64,8 @@ const SearchFilters = ({
               <SelectValue placeholder="All" />
             </SelectTrigger>
             <SelectContent>
-              {categories.map(category => (
+              <SelectItem value="All Categories">All Categories</SelectItem>
+              {categoryOptions && categoryOptions.map(category => (
                 <SelectItem key={category} value={category}>
                   {category}
                 </SelectItem>
