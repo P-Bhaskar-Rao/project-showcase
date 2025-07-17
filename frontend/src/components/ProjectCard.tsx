@@ -319,7 +319,11 @@ const ProjectCard = ({
                       rel="noopener noreferrer"
                       tabIndex={-1}
                     >
-                      <ExternalLink className="h-3 w-3" />
+                      {project.repoVisibility === 'private' ? (
+                        <Lock className="h-3 w-3" />
+                      ) : (
+                        <ExternalLink className="h-3 w-3" />
+                      )}
                       <span className="truncate">Repo</span>
                     </a>
                   </Button>
