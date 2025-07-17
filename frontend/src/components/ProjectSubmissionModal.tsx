@@ -119,10 +119,15 @@ const ProjectSubmissionModal = ({ isOpen, onClose, onSubmit, initialData, onUpda
   }, [initialData, isOpen]);
 
   const addTechStack = () => {
-    if (newTech.trim() && !formData.techStack.includes(newTech.trim())) {
+    // Split by comma, trim, filter out empty, ignore duplicates
+    const techs = newTech
+      .split(',')
+      .map(t => t.trim())
+      .filter(t => t && !formData.techStack.includes(t));
+    if (techs.length > 0) {
       setFormData(prev => ({
         ...prev,
-        techStack: [...prev.techStack, newTech.trim()]
+        techStack: [...prev.techStack, ...techs]
       }));
       setNewTech("");
     }
