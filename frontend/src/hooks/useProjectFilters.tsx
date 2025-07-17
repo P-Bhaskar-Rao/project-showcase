@@ -1,10 +1,9 @@
 import { useState, useMemo } from "react";
 import { Project } from "../types/Project";
 
-export const useProjectFilters = (projects: Project[], selectedCategoryFromParent?: string) => {
+export const useProjectFilters = (projects: Project[], selectedCategory: string) => {
   const [searchTerm, setSearchTerm] = useState("");
-  // Use parent value if provided, else default to 'All Categories'
-  const [selectedCategory, setSelectedCategory] = useState(selectedCategoryFromParent || "All Categories");
+  // Remove internal selectedCategory state, use prop instead
   const [selectedTech, setSelectedTech] = useState("All");
   const [sortBy, setSortBy] = useState("recent");
 
@@ -49,8 +48,6 @@ export const useProjectFilters = (projects: Project[], selectedCategoryFromParen
   return {
     searchTerm,
     setSearchTerm,
-    selectedCategory,
-    setSelectedCategory,
     selectedTech,
     setSelectedTech,
     sortBy,
