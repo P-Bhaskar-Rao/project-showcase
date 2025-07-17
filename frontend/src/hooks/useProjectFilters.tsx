@@ -25,7 +25,9 @@ export const useProjectFilters = (projects: Project[], selectedCategory: string)
       const matchesCategory =
         selectedCategory === "All" ||
         selectedCategory === "All Categories" ||
-        (project.category && project.category.trim().toLowerCase() === selectedCategory.trim().toLowerCase());
+        (Array.isArray(project.category)
+          ? project.category.map(c => c.trim().toLowerCase()).includes(selectedCategory.trim().toLowerCase())
+          : (project.category && project.category.trim().toLowerCase() === selectedCategory.trim().toLowerCase()));
       const matchesTech = selectedTech === "All" || (project.techStack && project.techStack.includes(selectedTech));
       return matchesSearch && matchesCategory && matchesTech;
     });
