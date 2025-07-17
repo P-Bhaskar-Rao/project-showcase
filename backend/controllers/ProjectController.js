@@ -3,16 +3,8 @@ const Project = require('../models/Project');
 // Get all projects
 exports.getAllProjects = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 12;
-    const skip = (page - 1) * limit;
-    const total = await Project.countDocuments();
-    const totalPages = Math.ceil(total / limit);
-    const projects = await Project.find()
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
-    res.status(200).json({ success: true, projects, total, page, totalPages });
+    const projects = await Project.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, projects });
   } catch (error) {
     next(error);
   }

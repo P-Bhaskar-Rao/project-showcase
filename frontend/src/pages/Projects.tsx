@@ -39,7 +39,7 @@ const Projects = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(!!user);
   const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
   const [isProfileCompletionModalOpen, setIsProfileCompletionModalOpen] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
   const API_URL = import.meta.env.VITE_API_URL;
   const accessToken = useAuthStore((state) => state.accessToken);
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -48,9 +48,8 @@ const Projects = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const isInitialized = useAuthStore((state) => state.isInitialized);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
   const PROJECTS_PER_PAGE = 6;
+  const [loading, setLoading] = useState(false);
 
   const openAuthModal = (mode: 'login' | 'signup') => {
     setAuthMode(mode);
@@ -69,20 +68,32 @@ const Projects = () => {
   }, [user]);
 
   useEffect(() => {
-    // Fetch projects from backend on mount or page change
+    // Fetch all projects from backend on mount
     const fetchProjects = async () => {
       setLoading(true);
       try {
-        type BackendProject = Omit<Project, 'id'> & { _id?: string, id?: string, authorId?: string };
-        const response = await axiosInstance.get(`${API_URL}/projects?page=${page}&limit=${PROJECTS_PER_PAGE}`);
+        const response = await axiosInstance.get(`${API_URL}/projects`);
         if (response.data && Array.isArray(response.data.projects)) {
-          const mappedProjects: Project[] = response.data.projects.map((project: BackendProject): Project => ({
-            ...project,
+          const mappedProjects: Project[] = response.data.projects.map((project: Partial<Project> & { _id?: string, id?: string, authorId?: string }): Project => ({
             id: project._id || project.id || '',
+            name: project.name || '',
+            description: project.description || '',
+            author: project.author || '',
             authorId: project.authorId || '',
+            techStack: project.techStack || [],
+            category: project.category || '',
+            githubUrl: project.githubUrl || '',
+            liveUrl: project.liveUrl,
+            internshipPeriod: project.internshipPeriod || '',
+            image: project.image,
+            architectureDiagram: project.architectureDiagram,
+            projectType: project.projectType,
+            companyName: project.companyName,
+            likes: project.likes,
+            engages: project.engages,
+            repoVisibility: project.repoVisibility
           }));
-          setProjects(mappedProjects);
-          setTotalPages(response.data.totalPages || 1);
+          setAllProjects(mappedProjects);
         }
       } catch (error) {
         console.error('Failed to fetch projects:', error);
@@ -91,9 +102,10 @@ const Projects = () => {
       }
     };
     fetchProjects();
-  }, [API_URL, page]);
+  }, [API_URL]);
 
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  // Filtering logic uses allProjects
   const {
     searchTerm,
     setSearchTerm,
@@ -102,18 +114,26 @@ const Projects = () => {
     sortBy,
     setSortBy,
     filteredProjects
-  } = useProjectFilters(projects, selectedCategory);
+  } = useProjectFilters(allProjects, selectedCategory);
+
+  // Paginate filtered results
+  const paginatedProjects = useMemo(() => {
+    const start = (page - 1) * PROJECTS_PER_PAGE;
+    return filteredProjects.slice(start, start + PROJECTS_PER_PAGE);
+  }, [filteredProjects, page]);
+
+  const totalPages = Math.ceil(filteredProjects.length / PROJECTS_PER_PAGE);
 
   const techOptions = useMemo(() => 
-    Array.from(new Set(projects.flatMap(p => p.techStack))).sort(), 
-    [projects]
+    Array.from(new Set(allProjects.flatMap(p => p.techStack))).sort(), 
+    [allProjects]
   );
 
+  // Update categoryOptions to use allProjects
   const categoryOptions = useMemo(() => {
-    // Gather all categories, flatten if array, deduplicate, and sort
-    const allCategories = projects.flatMap(p => Array.isArray(p.category) ? p.category : [p.category]);
+    const allCategories = allProjects.flatMap(p => Array.isArray(p.category) ? p.category : [p.category]);
     return Array.from(new Set(allCategories.filter(Boolean))).sort();
-  }, [projects]);
+  }, [allProjects]);
 
   const openAuthorModal = async (authorId: string, authorName: string) => {
     if (!isLoggedIn) {
@@ -199,7 +219,7 @@ const Projects = () => {
             withCredentials: true,
           }
         );
-        setProjects(prev => [
+        setAllProjects(prev => [
           {
             ...response.data.project,
             id: response.data.project._id || response.data.project.id, // Always ensure id is present and unique
@@ -257,7 +277,7 @@ const Projects = () => {
           withCredentials: true,
         }
       );
-      setProjects(prev => prev.map(p => p.id === updatedProject.id ? {
+      setAllProjects(prev => prev.map(p => p.id === updatedProject.id ? {
         ...response.data.project,
         id: response.data.project._id || response.data.project.id,
         authorId: response.data.project.authorId || '',
@@ -286,7 +306,7 @@ const Projects = () => {
         headers: { Authorization: `Bearer ${accessToken}` },
         withCredentials: true,
       });
-      setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
+      setAllProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
       toast.success("Project Deleted", {
         description: "Your project has been deleted.",
       });
@@ -316,7 +336,6 @@ const Projects = () => {
     searchTerm.trim() !== "" ||
     selectedCategory !== "All Categories" ||
     selectedTech !== "All";
-  const filteredTotalPages = Math.ceil(filteredProjects.length / PROJECTS_PER_PAGE);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
@@ -326,7 +345,7 @@ const Projects = () => {
         onSubmitProject={handleSubmitProject}
       />
       <main className="flex-1 w-full max-w-full px-4 mx-auto sm:max-w-3xl md:max-w-5xl lg:max-w-7xl">
-        {projects.length > 0 && (
+        {allProjects.length > 0 && (
           <SearchFilters
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -337,14 +356,14 @@ const Projects = () => {
             sortBy={sortBy}
             setSortBy={setSortBy}
             techOptions={techOptions}
-            totalProjects={projects.length}
+            totalProjects={allProjects.length}
             filteredCount={filteredProjects.length}
             categoryOptions={categoryOptions}
           />
         )}
 
         <ProjectGrid
-          projects={filteredProjects}
+          projects={paginatedProjects}
           isLoggedIn={isLoggedIn}
           favorites={favorites}
           onToggleFavorite={toggleFavorite}
@@ -356,12 +375,12 @@ const Projects = () => {
           onSubmitProject={handleSubmitProject}
           onEditProject={handleEditProject}
           onDeleteProject={handleDeleteProject}
-          showSearchNoResults={projects.length > 0 && filteredProjects.length === 0}
+          showSearchNoResults={allProjects.length > 0 && filteredProjects.length === 0}
           loading={loading}
         />
         {isFiltered
-          ? filteredTotalPages > 1 && (
-              <PaginationControls page={page} totalPages={filteredTotalPages} onPageChange={setPage} />
+          ? totalPages > 1 && (
+              <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
             )
           : totalPages > 1 && (
               <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
