@@ -190,9 +190,9 @@ const ProjectPage = () => {
           </div>
           {/* Content Section */}
           <div className="p-8">
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 gap-8">
               {/* Main Content */}
-              <div className="lg:col-span-2 space-y-8">
+              <div className="space-y-8">
                 {/* Description */}
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -222,10 +222,6 @@ const ProjectPage = () => {
                     ))}
                   </div>
                 </div>
-              </div>
-              {/* Sidebar - Empty for now */}
-              <div className="space-y-6">
-                {/* Sidebar content removed */}
               </div>
             </div>
           </div>
