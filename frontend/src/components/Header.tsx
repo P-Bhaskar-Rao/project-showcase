@@ -30,7 +30,7 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
   const location = useLocation();
   const [avatarError, setAvatarError] = useState(false);
 
-  const navLinkBase = "relative px-2 py-1 sm:px-3 sm:py-2 rounded-md font-semibold text-sm sm:text-base text-center transition-all duration-200 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-full after:h-[3px] after:bg-emerald-600 after:transition-transform after:duration-300 after:origin-left";
+  const navLinkBase = "relative px-1 py-0.5 sm:px-3 sm:py-2 rounded-md font-semibold text-xs sm:text-base text-center transition-all duration-200 after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-full after:h-[3px] after:bg-emerald-600 after:transition-transform after:duration-300 after:origin-left";
 
   // Function to get the first letter of the user's name
   const getUserInitial = (name: string | null | undefined) => {
@@ -84,8 +84,8 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
             <p className="text-gray-600 mt-1 text-sm sm:text-base">Discover amazing projects built by talented developers</p>
           </div>
           {/* Nav and Auth Row: on mobile, links left, buttons right; on md+, all grouped right with gap */}
-          <div className="w-full md:w-[40%] flex flex-row items-center justify-between md:justify-end md:gap-8">
-            <nav className="flex flex-row flex-nowrap gap-2 whitespace-nowrap">
+          <div className="w-full md:w-[40%] flex flex-row items-center justify-between md:justify-end md:gap-8 gap-1 sm:gap-2">
+            <nav className="flex flex-row flex-nowrap gap-1 sm:gap-2 whitespace-nowrap">
               <Link
                 to="/"
                 className={`${navLinkBase} whitespace-nowrap ${location.pathname === '/' ? 'text-emerald-600 after:scale-x-100 after:decoration-4' : 'text-gray-700 hover:text-emerald-600 after:scale-x-0 hover:after:scale-x-100 after:decoration-4'}`}
@@ -107,11 +107,11 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
                 </Link>
               )}
             </nav>
-            <div className="flex flex-row gap-2">
+            <div className="flex flex-row gap-1 sm:gap-2 items-center">
               {isLoggedIn ? (
                 <>
                   <Button
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 sm:px-4 sm:py-2 rounded-md text-sm sm:text-base"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-1 py-0.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-base"
                     onClick={onSubmitProject}
                   >
                     Submit Project
@@ -130,7 +130,7 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
-                        className="relative h-9 w-9 rounded-full overflow-hidden p-0 flex items-center justify-center border border-emerald-600" 
+                        className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full overflow-hidden p-0 flex items-center justify-center border border-emerald-600" 
                       >
                         {user?.avatar && !avatarError ? (
                           <img
@@ -172,12 +172,12 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
                   <Button
                     variant="outline"
                     onClick={() => onAuthModalOpen('login')}
-                    className="px-2 py-1 sm:px-4 sm:py-2 rounded-md text-sm sm:text-base"
+                    className="px-1 py-0.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-base"
                   >
                     Sign In
                   </Button>
                   <Button
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 sm:px-4 sm:py-2 rounded-md text-sm sm:text-base"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-1 py-0.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-base"
                     onClick={() => onAuthModalOpen('signup')}
                   >
                     Sign Up

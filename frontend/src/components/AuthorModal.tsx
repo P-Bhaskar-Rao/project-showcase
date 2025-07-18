@@ -74,24 +74,24 @@ const AuthorModal = ({ isOpen, onClose, author }: AuthorModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto p-3 sm:p-6">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-4">
+          <DialogTitle className="flex items-center gap-3 sm:gap-4">
             {author.avatar && !avatarError ? (
               <img
                 src={author.avatar}
                 alt={author.name}
-                className="w-16 h-16 rounded-full object-cover border-2 border-emerald-200"
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-emerald-200"
                 onError={() => setAvatarError(true)}
               />
             ) : (
-              <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-xl">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-lg sm:text-xl">
                 {getInitials(author.name)}
               </div>
             )}
             <div>
-              <h3 className="text-xl font-semibold">{author.name}</h3>
-              <p className="text-gray-500 text-sm">Developer</p>
+              <h3 className="text-lg sm:text-xl font-semibold">{author.name}</h3>
+              <p className="text-gray-500 text-xs sm:text-sm">Developer</p>
             </div>
           </DialogTitle>
         </DialogHeader>
