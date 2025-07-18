@@ -351,20 +351,22 @@ const Projects = () => {
       />
       <main className="flex-1 w-full max-w-full px-4 mx-auto sm:max-w-3xl md:max-w-5xl lg:max-w-7xl">
         {allProjects.length > 0 && (
-          <SearchFilters
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            selectedTech={selectedTech}
-            setSelectedTech={setSelectedTech}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            techOptions={techOptions}
-            totalProjects={allProjects.length}
-            filteredCount={filteredProjects.length}
-            categoryOptions={categoryOptions}
-          />
+          <div className="mt-6">
+            <SearchFilters
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              selectedTech={selectedTech}
+              setSelectedTech={setSelectedTech}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              techOptions={techOptions}
+              totalProjects={allProjects.length}
+              filteredCount={filteredProjects.length}
+              categoryOptions={categoryOptions}
+            />
+          </div>
         )}
 
         <ProjectGrid
