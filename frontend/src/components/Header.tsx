@@ -69,6 +69,7 @@ const Header = ({ isLoggedIn, onAuthModalOpen, onSubmitProject }: HeaderProps) =
       });
     } finally {
       clearAuth();
+      navigate('/'); // Redirect to home page after logout
     }
   };
 

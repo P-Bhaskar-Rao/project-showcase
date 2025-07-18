@@ -116,6 +116,11 @@ const Projects = () => {
     filteredProjects
   } = useProjectFilters(allProjects, selectedCategory);
 
+  // Reset page to 1 when filters/search change
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, selectedCategory, selectedTech, sortBy]);
+
   // Paginate filtered results
   const paginatedProjects = useMemo(() => {
     const start = (page - 1) * PROJECTS_PER_PAGE;
