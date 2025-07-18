@@ -199,7 +199,7 @@ const ProjectPage = () => {
                     <FileText className="h-5 w-5 text-emerald-600" />
                     About This Project
                   </h2>
-                  <div className="prose prose-gray max-w-none">
+                  <div>
                     <p className="text-gray-700 leading-relaxed whitespace-pre-line">
                       {project.description}
                     </p>
