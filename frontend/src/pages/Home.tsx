@@ -51,7 +51,7 @@ const Home = () => {
 
       <main className="flex-1 flex items-center justify-center px-4">
         <div className="max-w-xl w-full text-center space-y-8 py-16">
-          <h1 className="text-4xl font-bold text-emerald-600 mb-2">Welcome to ProjectShowcase</h1>
+          <h1 className="text-4xl font-bold text-emerald-600 mb-2">Welcome to Projectify</h1>
           <p className="text-gray-600 text-lg mb-8">Showcase your work, discover amazing projects, and connect with talented interns and early-career developers.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {user ? (
